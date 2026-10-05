@@ -41,6 +41,25 @@ export async function registerIpc(userDataPath: string): Promise<void> {
   ipcMain.handle('workspace:openRepositoryAt', (_event, path: string) =>
     openRepository(path, store, git, broadcast),
   )
+  ipcMain.handle('workspace:selectRepository', (_event, projectId: string) => {
+    const project = store.getProjectById(projectId)
+    if (!project) throw new Error('That repository is no longer in the recent repository list.')
+    return openRepository(project.path, store, git, broadcast)
+  })
+  ipcMain.handle('branches:list', () => {
+    const project = requireProject(store)
+    return git.listBranches(project.path)
+  })
+  ipcMain.handle('branches:switch', async (_event, name: string) => {
+    const project = requireProject(store)
+    await git.switchBranch(project.path, name)
+    return openRepository(project.path, store, git, broadcast)
+  })
+  ipcMain.handle('branches:create', async (_event, name: string, baseBranch?: string) => {
+    const project = requireProject(store)
+    await git.createBranch(project.path, name, baseBranch)
+    return openRepository(project.path, store, git, broadcast)
+  })
   ipcMain.handle('tasks:create', (_event, input: CreateTaskInput) => tasks.create(input))
   ipcMain.handle('tasks:get', (_event, taskId: string) => tasks.get(taskId))
   ipcMain.handle('tasks:sendMessage', (_event, taskId: string, message: string) =>
@@ -50,6 +69,12 @@ export async function registerIpc(userDataPath: string): Promise<void> {
   ipcMain.handle('tasks:runVerification', (_event, taskId: string) => tasks.runVerification(taskId))
   ipcMain.handle('tasks:approve', (_event, taskId: string) => tasks.approve(taskId))
   ipcMain.handle('tasks:getDiff', (_event, taskId: string, filePath?: string) => tasks.getDiff(taskId, filePath))
+}
+
+function requireProject(store: WorkspaceStore): Project {
+  const project = store.getProject()
+  if (!project) throw new Error('Open a Git repository first.')
+  return project
 }
 
 async function openRepository(

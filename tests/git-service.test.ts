@@ -38,6 +38,10 @@ describe('GitService', () => {
     expect(project).toMatchObject({ branch: 'main', isClean: true, name: 'project' })
 
     await git.createWorktree(repository, 'task/add-greeting', worktree, 'main')
+    expect(await git.listBranches(repository)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'main', isCurrent: true, isWorktree: true }),
+      expect.objectContaining({ name: 'task/add-greeting', isCurrent: false, isWorktree: true }),
+    ]))
     await mkdir(join(worktree, 'src'))
     await writeFile(join(worktree, 'src', 'greeting.ts'), "export const greeting = 'hello'\n", 'utf8')
     await writeFile(join(worktree, 'README.md'), '# Fixture\n\nNow with a greeting.\n', 'utf8')
@@ -55,5 +59,26 @@ describe('GitService', () => {
     const revision = await git.commit(worktree, 'Add greeting')
     expect(revision).toMatch(/^[a-f0-9]{7,}$/)
     expect(await git.getChangedFiles(worktree)).toEqual([])
+  })
+
+  it('creates and switches branches while protecting local changes', async () => {
+    await git.createBranch(repository, 'feature/repository-bar', 'main')
+    expect(await git.inspectRepository(repository)).toMatchObject({
+      branch: 'feature/repository-bar',
+      isClean: true,
+    })
+
+    await git.switchBranch(repository, 'main')
+    expect(await git.inspectRepository(repository)).toMatchObject({ branch: 'main' })
+
+    await writeFile(join(repository, 'draft.txt'), 'not committed\n', 'utf8')
+    await expect(git.switchBranch(repository, 'feature/repository-bar')).rejects.toThrow(
+      'Commit or stash the current repository changes before switching branches.',
+    )
+  })
+
+  it('rejects invalid and duplicate branch names', async () => {
+    await expect(git.createBranch(repository, 'not a branch')).rejects.toThrow('not a valid Git branch name')
+    await expect(git.createBranch(repository, 'main')).rejects.toThrow('already exists')
   })
 })

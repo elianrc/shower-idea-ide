@@ -1,6 +1,6 @@
 import { access, readFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
-import type { ChangedFile, Project, TaskDiff } from '../../shared/types'
+import type { BranchInfo, ChangedFile, Project, TaskDiff } from '../../shared/types'
 import { ProcessManager } from './process-manager'
 
 const STATUS_MAP: Record<string, ChangedFile['status']> = {
@@ -34,6 +34,68 @@ export class GitService {
   async createWorktree(repo: string, branch: string, path: string, baseBranch: string): Promise<void> {
     const result = await this.git(repo, ['worktree', 'add', '-b', branch, path, baseBranch], true)
     if (result.code !== 0) throw new Error(result.stderr.trim() || 'Unable to create the task worktree.')
+  }
+
+  async listBranches(repo: string): Promise<BranchInfo[]> {
+    const [currentResult, branchesResult, worktreesResult] = await Promise.all([
+      this.git(repo, ['branch', '--show-current']),
+      this.git(repo, [
+        'for-each-ref',
+        '--sort=-committerdate',
+        '--format=%(refname:short)\t%(committerdate:iso8601)',
+        'refs/heads',
+      ]),
+      this.git(repo, ['worktree', 'list', '--porcelain']),
+    ])
+    const current = currentResult.stdout.trim()
+    const worktreeBranches = new Set(
+      worktreesResult.stdout
+        .split('\n')
+        .filter((line) => line.startsWith('branch refs/heads/'))
+        .map((line) => line.slice('branch refs/heads/'.length)),
+    )
+
+    return branchesResult.stdout
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const [name, updatedAt] = line.split('\t')
+        return {
+          name,
+          isCurrent: name === current,
+          isWorktree: worktreeBranches.has(name),
+          updatedAt: updatedAt || undefined,
+        }
+      })
+  }
+
+  async switchBranch(repo: string, branch: string): Promise<void> {
+    const project = await this.inspectRepository(repo)
+    if (project.branch === branch) return
+    if (!project.isClean) {
+      throw new Error('Commit or stash the current repository changes before switching branches.')
+    }
+    const candidate = (await this.listBranches(repo)).find((item) => item.name === branch)
+    if (!candidate) throw new Error(`Branch “${branch}” does not exist in this repository.`)
+    if (candidate.isWorktree) {
+      throw new Error(`Branch “${branch}” is already checked out in another task worktree.`)
+    }
+    const result = await this.git(repo, ['switch', branch], true)
+    if (result.code !== 0) throw new Error(result.stderr.trim() || `Unable to switch to ${branch}.`)
+  }
+
+  async createBranch(repo: string, branch: string, baseBranch?: string): Promise<void> {
+    const name = branch.trim()
+    if (!name) throw new Error('Enter a branch name.')
+    const valid = await this.git(repo, ['check-ref-format', '--branch', name], true)
+    if (valid.code !== 0) throw new Error(`“${name}” is not a valid Git branch name.`)
+    if ((await this.listBranches(repo)).some((item) => item.name === name)) {
+      throw new Error(`Branch “${name}” already exists.`)
+    }
+    const args = ['switch', '-c', name]
+    if (baseBranch) args.push(baseBranch)
+    const result = await this.git(repo, args, true)
+    if (result.code !== 0) throw new Error(result.stderr.trim() || `Unable to create ${name}.`)
   }
 
   async getChangedFiles(repo: string): Promise<ChangedFile[]> {

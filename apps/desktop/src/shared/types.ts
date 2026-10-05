@@ -23,6 +23,13 @@ export interface Project {
   openedAt: string
 }
 
+export interface BranchInfo {
+  name: string
+  isCurrent: boolean
+  isWorktree: boolean
+  updatedAt?: string
+}
+
 export interface TaskActivity {
   id: string
   taskId: string
@@ -69,6 +76,7 @@ export interface Task {
 
 export interface WorkspaceSnapshot {
   project: Project | null
+  projects: Project[]
   tasks: Task[]
 }
 
@@ -89,6 +97,12 @@ export interface AppApi {
     getSnapshot(): Promise<WorkspaceSnapshot>
     openRepository(): Promise<WorkspaceSnapshot>
     openRepositoryAt(path: string): Promise<WorkspaceSnapshot>
+    selectRepository(projectId: string): Promise<WorkspaceSnapshot>
+  }
+  branches: {
+    list(): Promise<BranchInfo[]>
+    switch(name: string): Promise<WorkspaceSnapshot>
+    create(name: string, baseBranch?: string): Promise<WorkspaceSnapshot>
   }
   tasks: {
     create(input: CreateTaskInput): Promise<Task>

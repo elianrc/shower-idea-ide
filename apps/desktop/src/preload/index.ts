@@ -6,6 +6,12 @@ const api: AppApi = {
     getSnapshot: () => ipcRenderer.invoke('workspace:getSnapshot'),
     openRepository: () => ipcRenderer.invoke('workspace:openRepository'),
     openRepositoryAt: (path) => ipcRenderer.invoke('workspace:openRepositoryAt', path),
+    selectRepository: (projectId) => ipcRenderer.invoke('workspace:selectRepository', projectId),
+  },
+  branches: {
+    list: () => ipcRenderer.invoke('branches:list'),
+    switch: (name) => ipcRenderer.invoke('branches:switch', name),
+    create: (name, baseBranch) => ipcRenderer.invoke('branches:create', name, baseBranch),
   },
   tasks: {
     create: (input: CreateTaskInput) => ipcRenderer.invoke('tasks:create', input),
