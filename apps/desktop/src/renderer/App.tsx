@@ -48,7 +48,7 @@ export default function App() {
     <div className="app-shell">
       <Sidebar project={project} tasks={projectTasks} />
       <main className="workspace">
-        <RepositoryBar project={project} />
+        <RepositoryBar project={project} selectedTask={selectedTask ?? null} />
         {selectedTask ? <TaskDetail task={selectedTask} /> : <WorkspaceView project={project} tasks={projectTasks} view={view} />}
       </main>
 

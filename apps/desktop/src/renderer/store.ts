@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { BranchInfo, CreateTaskInput, Task, WorkspaceSnapshot } from '../shared/types'
+import type { BranchInfo, CreateTaskInput, RepositoryStatus, Task, WorkspaceSnapshot } from '../shared/types'
 
 type View = 'tasks' | 'changes' | 'history' | 'code'
 
@@ -10,10 +10,12 @@ interface AppState extends WorkspaceSnapshot {
   view: View
   isNewTaskOpen: boolean
   branches: BranchInfo[]
+  repositoryStatus: RepositoryStatus | null
   initialize(): Promise<() => void>
   openRepository(): Promise<void>
   selectRepository(projectId: string): Promise<void>
   refreshBranches(): Promise<void>
+  refreshRepositoryStatus(taskId?: string): Promise<void>
   switchBranch(name: string): Promise<boolean>
   createBranch(name: string, baseBranch?: string): Promise<boolean>
   createTask(input: CreateTaskInput): Promise<Task | null>
@@ -37,12 +39,18 @@ export const useAppStore = create<AppState>((set, get) => ({
   view: 'tasks',
   isNewTaskOpen: false,
   branches: [],
+  repositoryStatus: null,
 
   async initialize() {
     try {
       const snapshot = await window.showerIdea.workspace.getSnapshot()
-      const branches = snapshot.project ? await window.showerIdea.branches.list() : []
-      set({ ...snapshot, branches, isLoading: false })
+      const [branches, repositoryStatus] = snapshot.project
+        ? await Promise.all([
+            window.showerIdea.branches.list(),
+            window.showerIdea.workspace.getRepositoryStatus(),
+          ])
+        : [[], null]
+      set({ ...snapshot, branches, repositoryStatus, isLoading: false })
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
     }
@@ -61,8 +69,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       const snapshot = await window.showerIdea.workspace.openRepository()
-      const branches = snapshot.project ? await window.showerIdea.branches.list() : []
-      set({ ...snapshot, branches, isLoading: false, selectedTaskId: null, view: 'tasks' })
+      const [branches, repositoryStatus] = snapshot.project
+        ? await Promise.all([
+            window.showerIdea.branches.list(),
+            window.showerIdea.workspace.getRepositoryStatus(),
+          ])
+        : [[], null]
+      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedTaskId: null, view: 'tasks' })
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
     }
@@ -73,8 +86,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       const snapshot = await window.showerIdea.workspace.selectRepository(projectId)
-      const branches = await window.showerIdea.branches.list()
-      set({ ...snapshot, branches, isLoading: false, selectedTaskId: null, view: 'tasks' })
+      const [branches, repositoryStatus] = await Promise.all([
+        window.showerIdea.branches.list(),
+        window.showerIdea.workspace.getRepositoryStatus(),
+      ])
+      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedTaskId: null, view: 'tasks' })
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
     }
@@ -89,12 +105,24 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
+  async refreshRepositoryStatus(taskId) {
+    if (!get().project) return
+    try {
+      set({ repositoryStatus: await window.showerIdea.workspace.getRepositoryStatus(taskId) })
+    } catch {
+      set({ repositoryStatus: null })
+    }
+  },
+
   async switchBranch(name) {
     set({ isLoading: true, error: null })
     try {
       const snapshot = await window.showerIdea.branches.switch(name)
-      const branches = await window.showerIdea.branches.list()
-      set({ ...snapshot, branches, isLoading: false, selectedTaskId: null, view: 'tasks' })
+      const [branches, repositoryStatus] = await Promise.all([
+        window.showerIdea.branches.list(),
+        window.showerIdea.workspace.getRepositoryStatus(),
+      ])
+      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedTaskId: null, view: 'tasks' })
       return true
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
@@ -106,8 +134,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       const snapshot = await window.showerIdea.branches.create(name, baseBranch)
-      const branches = await window.showerIdea.branches.list()
-      set({ ...snapshot, branches, isLoading: false, selectedTaskId: null, view: 'tasks' })
+      const [branches, repositoryStatus] = await Promise.all([
+        window.showerIdea.branches.list(),
+        window.showerIdea.workspace.getRepositoryStatus(),
+      ])
+      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedTaskId: null, view: 'tasks' })
       return true
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
@@ -127,8 +158,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  selectTask: (selectedTaskId) => set({ selectedTaskId }),
-  setView: (view) => set({ view, selectedTaskId: null }),
+  selectTask(selectedTaskId) {
+    set({ selectedTaskId })
+    void get().refreshRepositoryStatus(selectedTaskId ?? undefined)
+  },
+  setView(view) {
+    set({ view, selectedTaskId: null })
+    void get().refreshRepositoryStatus()
+  },
   setNewTaskOpen: (isNewTaskOpen) => set({ isNewTaskOpen }),
   clearError: () => set({ error: null }),
 }))

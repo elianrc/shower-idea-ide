@@ -3,6 +3,7 @@ import {
   Check,
   ChevronDown,
   CircleDot,
+  FolderTree,
   FolderGit2,
   GitBranch,
   GitFork,
@@ -11,19 +12,25 @@ import {
   Settings2,
   X,
 } from 'lucide-react'
-import type { BranchInfo, Project } from '../../shared/types'
+import type { BranchInfo, Project, Task } from '../../shared/types'
+import { STATUS_LABELS } from '../../shared/types'
 import { useAppStore } from '../store'
+import { StatusPill } from './StatusPill'
 
-type OpenMenu = 'repository' | 'branch' | null
+type OpenMenu = 'repository' | 'workspace' | 'branch' | null
 
-export function RepositoryBar({ project }: { project: Project }) {
+export function RepositoryBar({ project, selectedTask }: { project: Project; selectedTask: Task | null }) {
   const projects = useAppStore((state) => state.projects)
+  const tasks = useAppStore((state) => state.tasks)
   const branches = useAppStore((state) => state.branches)
+  const repositoryStatus = useAppStore((state) => state.repositoryStatus)
   const isLoading = useAppStore((state) => state.isLoading)
   const openRepository = useAppStore((state) => state.openRepository)
   const selectRepository = useAppStore((state) => state.selectRepository)
   const switchBranch = useAppStore((state) => state.switchBranch)
   const createBranch = useAppStore((state) => state.createBranch)
+  const selectTask = useAppStore((state) => state.selectTask)
+  const setView = useAppStore((state) => state.setView)
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null)
   const [branchQuery, setBranchQuery] = useState('')
   const [isCreatingBranch, setCreatingBranch] = useState(false)
@@ -48,6 +55,14 @@ export function RepositoryBar({ project }: { project: Project }) {
   const filteredBranches = branchQuery
     ? branches.filter((branch) => branch.name.toLowerCase().includes(branchQuery.toLowerCase()))
     : branches
+  const projectTasks = tasks.filter((task) => task.projectId === project.id && task.status !== 'cancelled')
+  const activeTasks = projectTasks.filter((task) => task.status !== 'committed')
+  const completedTasks = projectTasks.filter((task) => task.status === 'committed').slice(0, 3)
+  const displayedBranch = selectedTask?.branch ?? repositoryStatus?.branch ?? project.branch
+  const isWorkspaceClean = repositoryStatus?.isClean ?? (!selectedTask && project.isClean)
+  const cleanlinessLabel = repositoryStatus
+    ? repositoryStatus.isClean ? 'No local changes' : 'Local changes'
+    : selectedTask ? 'Preparing workspace' : project.isClean ? 'No local changes' : 'Local changes'
 
   const chooseRepository = async (projectId: string) => {
     setOpenMenu(null)
@@ -58,6 +73,15 @@ export function RepositoryBar({ project }: { project: Project }) {
     if (branch.isCurrent || (branch.isWorktree && !branch.isCurrent)) return
     setOpenMenu(null)
     await switchBranch(branch.name)
+  }
+
+  const chooseWorkspace = (taskId: string | null) => {
+    setOpenMenu(null)
+    if (taskId) {
+      selectTask(taskId)
+    } else {
+      setView('tasks')
+    }
   }
 
   const submitBranch = async () => {
@@ -117,17 +141,89 @@ export function RepositoryBar({ project }: { project: Project }) {
         ) : null}
       </div>
 
+      <div className="repository-control-wrap workspace-control-wrap">
+        <button
+          aria-expanded={openMenu === 'workspace'}
+          className={openMenu === 'workspace' ? 'repository-control workspace-control active' : 'repository-control workspace-control'}
+          onClick={() => setOpenMenu((current) => current === 'workspace' ? null : 'workspace')}
+          type="button"
+        >
+          <span className="repository-control-icon workspace"><FolderTree size={18} /></span>
+          <span className="repository-control-copy">
+            <small>Active workspace</small>
+            <strong>{selectedTask?.title ?? 'Main workspace'}</strong>
+          </span>
+          <ChevronDown size={14} />
+        </button>
+
+        {openMenu === 'workspace' ? (
+          <div className="repository-popover workspace-popover">
+            <div className="popover-title">Main workspace</div>
+            <div className="repository-menu-list workspace-menu-list">
+              <button
+                className={!selectedTask ? 'workspace-menu-row selected' : 'workspace-menu-row'}
+                onClick={() => chooseWorkspace(null)}
+                type="button"
+              >
+                <span className="workspace-row-icon"><FolderGit2 size={15} /></span>
+                <span className="workspace-row-copy">
+                  <strong>{project.name}</strong>
+                  <small>{project.branch} · direct workspace</small>
+                </span>
+                {!selectedTask ? <Check size={15} /> : null}
+              </button>
+            </div>
+
+            <div className="popover-title workspace-section-title">Agent task worktrees</div>
+            <div className="repository-menu-list workspace-menu-list task-worktree-list">
+              {activeTasks.length === 0 ? <p className="branch-empty">No active task worktrees</p> : null}
+              {activeTasks.map((task) => (
+                <button
+                  className={selectedTask?.id === task.id ? 'workspace-menu-row selected' : 'workspace-menu-row'}
+                  key={task.id}
+                  onClick={() => chooseWorkspace(task.id)}
+                  type="button"
+                >
+                  <StatusPill compact status={task.status} />
+                  <span className="workspace-row-copy">
+                    <strong>{task.title}</strong>
+                    <small>{task.branch} · {STATUS_LABELS[task.status]}</small>
+                  </span>
+                  {selectedTask?.id === task.id ? <Check size={15} /> : null}
+                </button>
+              ))}
+            </div>
+
+            {completedTasks.length > 0 ? (
+              <>
+                <div className="popover-title workspace-section-title">Recently completed</div>
+                <div className="repository-menu-list workspace-menu-list completed-worktree-list">
+                  {completedTasks.map((task) => (
+                    <button className="workspace-menu-row" key={task.id} onClick={() => chooseWorkspace(task.id)} type="button">
+                      <StatusPill compact status={task.status} />
+                      <span className="workspace-row-copy"><strong>{task.title}</strong><small>{task.commit ?? task.branch}</small></span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+
       <div className="repository-control-wrap branch-control-wrap">
         <button
           aria-expanded={openMenu === 'branch'}
           className={openMenu === 'branch' ? 'repository-control branch-control active' : 'repository-control branch-control'}
+          disabled={Boolean(selectedTask)}
           onClick={() => setOpenMenu((current) => current === 'branch' ? null : 'branch')}
+          title={selectedTask ? 'Task branches are managed with their isolated worktrees.' : undefined}
           type="button"
         >
           <span className="repository-control-icon branch"><GitBranch size={18} /></span>
           <span className="repository-control-copy">
-            <small>Current branch</small>
-            <strong>{project.branch}</strong>
+            <small>{selectedTask ? 'Task branch' : 'Current branch'}</small>
+            <strong>{displayedBranch}</strong>
           </span>
           <ChevronDown size={14} />
         </button>
@@ -188,11 +284,21 @@ export function RepositoryBar({ project }: { project: Project }) {
       </div>
 
       <div className="repository-bar-spacer" />
-      <div className={project.isClean ? 'repository-state clean' : 'repository-state'}>
+      <div className={isWorkspaceClean ? 'repository-state clean' : 'repository-state'}>
         <CircleDot size={14} />
-        <span>{project.isClean ? 'No local changes' : 'Local changes'}</span>
+        <span>{cleanlinessLabel}</span>
       </div>
-      {project.remote ? <div className="remote-state" title={project.remote}><GitFork size={14} /><span>origin</span></div> : null}
+      {repositoryStatus && (repositoryStatus.ahead > 0 || repositoryStatus.behind > 0) ? (
+        <div className="divergence-state" title="Commits compared with the upstream branch">
+          {repositoryStatus.ahead > 0 ? <span>↑ {repositoryStatus.ahead}</span> : null}
+          {repositoryStatus.behind > 0 ? <span>↓ {repositoryStatus.behind}</span> : null}
+        </div>
+      ) : null}
+      {repositoryStatus?.hasRemote || project.remote ? (
+        <div className="remote-state" title={repositoryStatus?.upstream ?? project.remote}>
+          <GitFork size={14} /><span>{repositoryStatus?.upstream ?? 'Not published'}</span>
+        </div>
+      ) : null}
       <button aria-label="Settings" className="toolbar-icon-button" type="button"><Settings2 size={17} /></button>
     </header>
   )
