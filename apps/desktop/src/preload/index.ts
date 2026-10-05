@@ -7,6 +7,7 @@ const api: AppApi = {
     openRepository: () => ipcRenderer.invoke('workspace:openRepository'),
     openRepositoryAt: (path) => ipcRenderer.invoke('workspace:openRepositoryAt', path),
     selectRepository: (projectId) => ipcRenderer.invoke('workspace:selectRepository', projectId),
+    getRepositoryStatus: (taskId) => ipcRenderer.invoke('workspace:getRepositoryStatus', taskId),
   },
   branches: {
     list: () => ipcRenderer.invoke('branches:list'),

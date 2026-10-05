@@ -81,4 +81,24 @@ describe('GitService', () => {
     await expect(git.createBranch(repository, 'not a branch')).rejects.toThrow('not a valid Git branch name')
     await expect(git.createBranch(repository, 'main')).rejects.toThrow('already exists')
   })
+
+  it('reports cleanliness and divergence from the configured upstream', async () => {
+    await git.createBranch(repository, 'feature/status', 'main')
+    await execute('git', ['branch', '--set-upstream-to=main', 'feature/status'], { cwd: repository })
+    await writeFile(join(repository, 'status.txt'), 'status model\n', 'utf8')
+
+    expect(await git.getRepositoryStatus(repository)).toMatchObject({
+      branch: 'feature/status',
+      isClean: false,
+      isDetached: false,
+      hasRemote: false,
+      upstream: 'main',
+      ahead: 0,
+      behind: 0,
+    })
+
+    await execute('git', ['add', 'status.txt'], { cwd: repository })
+    await execute('git', ['commit', '-m', 'Add status fixture'], { cwd: repository })
+    expect(await git.getRepositoryStatus(repository)).toMatchObject({ ahead: 1, behind: 0, isClean: true })
+  })
 })

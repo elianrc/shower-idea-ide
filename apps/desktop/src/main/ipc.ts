@@ -46,6 +46,13 @@ export async function registerIpc(userDataPath: string): Promise<void> {
     if (!project) throw new Error('That repository is no longer in the recent repository list.')
     return openRepository(project.path, store, git, broadcast)
   })
+  ipcMain.handle('workspace:getRepositoryStatus', (_event, taskId?: string) => {
+    const project = requireProject(store)
+    if (!taskId) return git.getRepositoryStatus(project.path)
+    const task = store.getTask(taskId)
+    if (!task || task.projectId !== project.id) throw new Error('That task is not part of the current repository.')
+    return git.getRepositoryStatus(task.worktreePath)
+  })
   ipcMain.handle('branches:list', () => {
     const project = requireProject(store)
     return git.listBranches(project.path)

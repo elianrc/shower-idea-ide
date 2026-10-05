@@ -1,6 +1,6 @@
 import { access, readFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
-import type { BranchInfo, ChangedFile, Project, TaskDiff } from '../../shared/types'
+import type { BranchInfo, ChangedFile, Project, RepositoryStatus, TaskDiff } from '../../shared/types'
 import { ProcessManager } from './process-manager'
 
 const STATUS_MAP: Record<string, ChangedFile['status']> = {
@@ -34,6 +34,40 @@ export class GitService {
   async createWorktree(repo: string, branch: string, path: string, baseBranch: string): Promise<void> {
     const result = await this.git(repo, ['worktree', 'add', '-b', branch, path, baseBranch], true)
     if (result.code !== 0) throw new Error(result.stderr.trim() || 'Unable to create the task worktree.')
+  }
+
+  async getRepositoryStatus(repo: string): Promise<RepositoryStatus> {
+    const [rootResult, branchResult, statusResult, remoteResult, upstreamResult] = await Promise.all([
+      this.git(repo, ['rev-parse', '--show-toplevel']),
+      this.git(repo, ['branch', '--show-current']),
+      this.git(repo, ['status', '--porcelain']),
+      this.git(repo, ['remote'], true),
+      this.git(repo, ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}'], true),
+    ])
+    const branch = branchResult.stdout.trim()
+    const upstream = upstreamResult.code === 0 ? upstreamResult.stdout.trim() : undefined
+    let ahead = 0
+    let behind = 0
+
+    if (upstream) {
+      const divergence = await this.git(repo, ['rev-list', '--left-right', '--count', `HEAD...${upstream}`], true)
+      if (divergence.code === 0) {
+        const [aheadValue, behindValue] = divergence.stdout.trim().split(/\s+/).map(Number)
+        ahead = Number.isFinite(aheadValue) ? aheadValue : 0
+        behind = Number.isFinite(behindValue) ? behindValue : 0
+      }
+    }
+
+    return {
+      path: rootResult.stdout.trim(),
+      branch: branch || 'HEAD',
+      isClean: statusResult.stdout.trim().length === 0,
+      isDetached: branch.length === 0,
+      hasRemote: remoteResult.stdout.trim().length > 0,
+      upstream: upstream || undefined,
+      ahead,
+      behind,
+    }
   }
 
   async listBranches(repo: string): Promise<BranchInfo[]> {

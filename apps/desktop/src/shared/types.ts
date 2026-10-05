@@ -30,6 +30,17 @@ export interface BranchInfo {
   updatedAt?: string
 }
 
+export interface RepositoryStatus {
+  path: string
+  branch: string
+  isClean: boolean
+  isDetached: boolean
+  hasRemote: boolean
+  upstream?: string
+  ahead: number
+  behind: number
+}
+
 export interface TaskActivity {
   id: string
   taskId: string
@@ -98,6 +109,7 @@ export interface AppApi {
     openRepository(): Promise<WorkspaceSnapshot>
     openRepositoryAt(path: string): Promise<WorkspaceSnapshot>
     selectRepository(projectId: string): Promise<WorkspaceSnapshot>
+    getRepositoryStatus(taskId?: string): Promise<RepositoryStatus>
   }
   branches: {
     list(): Promise<BranchInfo[]>
