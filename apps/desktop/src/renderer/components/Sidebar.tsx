@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock3, Code2, GitCompareArrows, ListTodo, Plus } from 'lucide-react'
+import { Clock3, Code2, GitCompareArrows, ListTodo, Plus } from 'lucide-react'
 import type { Project, Task } from '../../shared/types'
 import { useAppStore } from '../store'
 import { BrandMark } from './BrandMark'
@@ -24,15 +24,6 @@ export function Sidebar({ project, tasks }: { project: Project; tasks: Task[] })
       <div className="sidebar-drag-region">
         <BrandMark size={25} />
         <span>Shower Idea</span>
-      </div>
-
-      <div className="project-switcher">
-        <span className="project-avatar">{project.name.slice(0, 1).toUpperCase()}</span>
-        <span className="project-switcher-copy">
-          <strong>{project.name}</strong>
-          <small>{project.branch}</small>
-        </span>
-        <CheckCircle2 className={project.isClean ? 'clean-icon' : 'dirty-icon'} size={15} />
       </div>
 
       <nav aria-label="Workspace" className="main-nav">

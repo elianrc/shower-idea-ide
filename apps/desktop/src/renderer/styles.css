@@ -32,8 +32,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 
 .app-shell { display: grid; grid-template-columns: 236px minmax(0, 1fr); height: 100%; background: var(--bg); }
 .sidebar { position: relative; display: flex; min-width: 0; flex-direction: column; border-right: 1px solid #1d2220; background: #0d1011; }
-.sidebar-drag-region, .workspace-titlebar { -webkit-app-region: drag; }
-.sidebar-drag-region { display: flex; align-items: center; gap: 9px; height: 53px; padding: 0 17px 0 76px; border-bottom: 1px solid #191e1c; font-family: 'Avenir Next', Inter, sans-serif; font-size: 13px; font-weight: 650; letter-spacing: -.01em; }
+.sidebar-drag-region, .repository-bar, .repository-bar-drag { -webkit-app-region: drag; }
+.sidebar-drag-region { display: flex; align-items: center; gap: 9px; height: 64px; padding: 0 17px 0 76px; border-bottom: 1px solid #191e1c; font-family: 'Avenir Next', Inter, sans-serif; font-size: 13px; font-weight: 650; letter-spacing: -.01em; }
 .brand-mark { overflow: visible; fill: none; stroke: var(--accent); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; }
 .brand-mark circle { fill: #0f1713; }
 .project-switcher { display: flex; align-items: center; gap: 10px; margin: 14px 11px 8px; padding: 9px; border: 1px solid var(--line); border-radius: 9px; background: #121615; }
@@ -64,8 +64,95 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .footer-state { margin-left: auto; }
 
 .workspace { display: flex; min-width: 0; height: 100%; flex-direction: column; background: radial-gradient(circle at 62% 0%, #111715 0, transparent 34%), var(--bg); }
-.workspace-titlebar { display: flex; flex: 0 0 53px; align-items: center; justify-content: center; border-bottom: 1px solid #191e1c; color: #5f6864; font-size: 10px; }
-.workspace-titlebar .icon-button { -webkit-app-region: no-drag; position: absolute; right: 14px; }
+.repository-bar { position: relative; z-index: 15; display: flex; flex: 0 0 64px; align-items: stretch; border-bottom: 1px solid #242a28; background: #101314e8; box-shadow: 0 1px #050706; backdrop-filter: blur(18px); }
+.repository-control-wrap, .repository-bar-actions { -webkit-app-region: no-drag; position: relative; }
+.repository-control { display: flex; width: 244px; height: 63px; align-items: center; gap: 11px; padding: 0 15px; border: 0; border-right: 1px solid #242a28; color: #dce2df; background: transparent; text-align: left; cursor: pointer; }
+.repository-control:hover, .repository-control.active { background: #171b1a; }
+.repository-control.branch-control { width: 222px; }
+.repository-control > svg:first-child { flex: 0 0 auto; color: #76817c; }
+.repository-control.active .repository-control-icon { box-shadow: inset 0 0 0 1px #ffffff12; }
+.repository-control-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; }
+.repository-control-copy small { color: #626b67; font-size: 8px; font-weight: 650; letter-spacing: .075em; text-transform: uppercase; }
+.repository-control-copy strong { overflow: hidden; font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.repository-control > svg:last-child { flex: 0 0 auto; color: #59625e; transition: transform .16s ease; }
+.repository-control.active > svg:last-child { transform: rotate(180deg); }
+.repository-bar-drag { width: 8px; flex: 0 0 8px; }
+.repository-bar-spacer { -webkit-app-region: drag; min-width: 12px; flex: 1; }
+.repository-state, .remote-state { -webkit-app-region: no-drag; display: flex; align-items: center; gap: 6px; padding: 0 10px; color: #6f7974; font-size: 9px; white-space: nowrap; }
+.repository-state > svg { color: var(--warning); }
+.repository-state.clean > svg { color: var(--accent); }
+.remote-state { padding-left: 12px; border-left: 1px solid #272d2a; color: #59625e; font-family: ui-monospace, monospace; }
+.toolbar-icon-button { -webkit-app-region: no-drag; display: grid; width: 31px; height: 31px; margin: auto 13px auto 2px; place-items: center; border: 1px solid transparent; border-radius: 7px; color: #66706b; background: transparent; cursor: pointer; }
+.toolbar-icon-button:hover { border-color: #303734; color: #bbc3bf; background: #1a1f1d; }
+.repository-popover { position: absolute; top: 56px; left: 7px; z-index: 60; width: min(370px, calc(100vw - 28px)); overflow: hidden; border: 1px solid #343c38; border-radius: 10px; background: #151918; box-shadow: 0 20px 65px #000c, 0 2px 8px #0008; animation: repository-menu-in .13s ease-out; }
+@keyframes repository-menu-in { from { opacity: 0; transform: translateY(-4px); } }
+.repository-popover-header { display: flex; align-items: center; justify-content: space-between; min-height: 43px; padding: 0 13px; border-bottom: 1px solid #282e2b; }
+.repository-popover-header strong { color: #cdd3d0; font-size: 11px; font-weight: 600; }
+.repository-popover-header span { color: #5f6964; font-size: 8px; }
+.repository-search { position: relative; display: flex; align-items: center; margin: 10px; }
+.repository-search > svg { position: absolute; left: 10px; color: #626c67; pointer-events: none; }
+.repository-search input, .branch-name-input { width: 100%; height: 34px; padding: 0 11px 0 31px; border: 1px solid #303834; border-radius: 7px; outline: 0; color: #d8ddda; background: #0e1110; font-size: 10px; }
+.repository-search input:focus, .branch-name-input:focus { border-color: #55856a; box-shadow: 0 0 0 3px #3f75531b; }
+.repository-search input::placeholder, .branch-name-input::placeholder { color: #505954; }
+.repository-list { max-height: 310px; overflow: auto; padding: 3px 6px 7px; }
+.repository-menu-item { display: flex; width: 100%; min-height: 43px; align-items: center; gap: 10px; padding: 7px 8px; border: 0; border-radius: 6px; color: #9da6a1; background: transparent; text-align: left; cursor: pointer; }
+.repository-menu-item:hover:not(:disabled) { color: #e0e5e2; background: #202522; }
+.repository-menu-item:disabled { opacity: .45; cursor: default; }
+.repository-menu-item > svg:first-child { flex: 0 0 auto; color: #707b75; }
+.repository-menu-item.active > svg:first-child, .repository-menu-item .active-check { color: var(--accent); }
+.repository-item-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; }
+.repository-item-copy strong { overflow: hidden; color: inherit; font-size: 10px; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
+.repository-item-copy small { overflow: hidden; color: #59635e; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.repository-menu-item > time { color: #505a55; font-size: 8px; }
+.repository-menu-footer { padding: 7px; border-top: 1px solid #282e2b; background: #121514; }
+.repository-menu-footer .repository-menu-item { min-height: 35px; }
+.branch-create { padding: 13px; }
+.branch-create-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 13px; }
+.branch-create-title strong { font-size: 11px; font-weight: 600; }
+.branch-create-title button { display: grid; width: 25px; height: 25px; place-items: center; border: 0; border-radius: 5px; color: #707a75; background: transparent; cursor: pointer; }
+.branch-create-title button:hover { color: #d5dbd8; background: #242a27; }
+.branch-create label { display: block; margin-bottom: 13px; color: #747e79; font-size: 9px; }
+.branch-name-input { margin-top: 7px; padding-left: 10px; }
+.branch-base { padding: 9px 10px; border: 1px solid #282f2b; border-radius: 7px; color: #747e79; background: #111413; font-size: 9px; }
+.branch-base strong { color: #abb3af; font-weight: 550; }
+.branch-create-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 15px; }
+.repository-empty { padding: 24px 14px; color: #65706a; font-size: 9px; text-align: center; }
+.repository-control-icon { display: grid; width: 27px; height: 27px; flex: 0 0 auto; place-items: center; border-radius: 7px; color: #9bcaae; background: #1a3022; }
+.repository-control-icon.branch { color: #c8b2d7; background: #2a2230; }
+.repository-menu-list, .branch-menu-list { max-height: 310px; overflow: auto; padding: 5px 6px; }
+.popover-title { padding: 10px 13px 5px; color: #626c67; font-size: 8px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; }
+.repository-menu-row, .branch-menu-row { display: flex; width: 100%; min-height: 44px; align-items: center; gap: 10px; padding: 7px 8px; border: 0; border-radius: 6px; color: #a3aca7; background: transparent; text-align: left; cursor: pointer; }
+.repository-menu-row:hover, .branch-menu-row:hover:not(:disabled) { color: #e1e5e3; background: #202522; }
+.repository-menu-row.selected, .branch-menu-row.selected { background: #1b2720; }
+.repository-menu-row > span:nth-child(2), .branch-menu-row > span { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; }
+.repository-menu-row strong, .branch-menu-row strong { overflow: hidden; font-size: 10px; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
+.repository-menu-row small, .branch-menu-row small { overflow: hidden; color: #59635e; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.repository-menu-row > svg:last-child, .branch-menu-row.selected > svg:first-child { color: var(--accent); }
+.repository-row-avatar { display: grid !important; width: 27px; height: 27px; flex: 0 0 auto !important; place-items: center; border-radius: 6px; color: #abd9bc; background: #1d3527; font-size: 10px; font-weight: 700; }
+.branch-menu-row > svg:first-child { flex: 0 0 auto; color: #75807a; }
+.branch-menu-row > time { color: #505a55; font-size: 8px; }
+.branch-menu-row:disabled { opacity: .45; cursor: default; }
+.popover-action { display: flex; width: 100%; min-height: 41px; align-items: center; gap: 9px; padding: 0 14px; border: 0; border-top: 1px solid #282e2b; color: #a7b0ab; background: #121514; font-size: 10px; text-align: left; cursor: pointer; }
+.popover-action:hover { color: #e0e5e2; background: #1c211f; }
+.branch-search-row { display: flex; align-items: center; gap: 7px; padding: 10px 10px 5px; }
+.branch-search { position: relative; display: flex; min-width: 0; flex: 1; align-items: center; }
+.branch-search > svg { position: absolute; left: 10px; color: #626c67; pointer-events: none; }
+.branch-search input { width: 100%; height: 34px; padding: 0 10px 0 31px; border: 1px solid #303834; border-radius: 7px; outline: 0; color: #d8ddda; background: #0e1110; font-size: 10px; }
+.branch-search input:focus { border-color: #55856a; box-shadow: 0 0 0 3px #3f75531b; }
+.new-branch-button { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border: 1px solid #303834; border-radius: 7px; color: #8b9590; background: #191d1c; cursor: pointer; }
+.new-branch-button:hover { color: #dce2df; background: #222825; }
+.branch-empty { margin: 0; padding: 22px; color: #616b66; font-size: 9px; text-align: center; }
+.create-branch-view { padding: 16px; }
+.create-branch-heading { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; }
+.create-branch-heading > div { display: flex; flex-direction: column; gap: 4px; }
+.create-branch-heading small { color: #65706a; font-size: 8px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; }
+.create-branch-heading strong { font-size: 12px; font-weight: 600; }
+.create-branch-heading button { display: grid; width: 26px; height: 26px; place-items: center; border: 0; border-radius: 5px; color: #6d7772; background: transparent; cursor: pointer; }
+.create-branch-heading button:hover { color: #d6dcda; background: #242a27; }
+.create-branch-view label { display: flex; flex-direction: column; gap: 7px; color: #79837e; font-size: 9px; }
+.create-branch-view input { width: 100%; height: 35px; padding: 0 10px; border: 1px solid #303834; border-radius: 7px; outline: 0; color: #d8ddda; background: #0e1110; font-size: 10px; }
+.create-branch-view input:focus { border-color: #55856a; box-shadow: 0 0 0 3px #3f75531b; }
+.create-branch-button { width: 100%; margin-top: 14px; }
 .page { flex: 1; min-height: 0; overflow: auto; padding: 50px clamp(44px, 6vw, 88px); }
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; max-width: 1080px; margin: 0 auto 44px; }
 .eyebrow { margin: 0 0 8px; color: #718079; font-size: 9px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }

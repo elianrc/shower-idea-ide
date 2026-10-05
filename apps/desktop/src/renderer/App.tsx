@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
-import { AlertCircle, Code2, GitCompareArrows, History, Settings2, X } from 'lucide-react'
+import { AlertCircle, Code2, GitCompareArrows, History, X } from 'lucide-react'
 import type { Project, Task } from '../shared/types'
 import { Dashboard } from './components/Dashboard'
 import { NewTaskModal } from './components/NewTaskModal'
 import { Onboarding } from './components/Onboarding'
+import { RepositoryBar } from './components/RepositoryBar'
 import { Sidebar } from './components/Sidebar'
 import { TaskDetail } from './components/TaskDetail'
 import { useAppStore } from './store'
@@ -47,10 +48,7 @@ export default function App() {
     <div className="app-shell">
       <Sidebar project={project} tasks={projectTasks} />
       <main className="workspace">
-        <div className="workspace-titlebar">
-          <span>{selectedTask ? selectedTask.title : project.name}</span>
-          <button aria-label="Settings" className="icon-button subtle" type="button"><Settings2 size={16} /></button>
-        </div>
+        <RepositoryBar project={project} />
         {selectedTask ? <TaskDetail task={selectedTask} /> : <WorkspaceView project={project} tasks={projectTasks} view={view} />}
       </main>
 
