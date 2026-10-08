@@ -21,31 +21,23 @@ NSColor.white.setStroke()
 
 let leftPage = NSBezierPath()
 leftPage.lineWidth = 38
-leftPage.lineCapStyle = .round
-leftPage.lineJoinStyle = .round
+leftPage.lineCapStyle = .butt
+leftPage.lineJoinStyle = .miter
 leftPage.move(to: NSPoint(x: 512, y: 680))
 leftPage.line(to: NSPoint(x: 246, y: 735))
 leftPage.line(to: NSPoint(x: 246, y: 300))
-leftPage.curve(
-  to: NSPoint(x: 512, y: 330),
-  controlPoint1: NSPoint(x: 346, y: 278),
-  controlPoint2: NSPoint(x: 442, y: 298)
-)
+leftPage.line(to: NSPoint(x: 512, y: 330))
 leftPage.close()
 leftPage.stroke()
 
 let rightPage = NSBezierPath()
 rightPage.lineWidth = 38
-rightPage.lineCapStyle = .round
-rightPage.lineJoinStyle = .round
+rightPage.lineCapStyle = .butt
+rightPage.lineJoinStyle = .miter
 rightPage.move(to: NSPoint(x: 512, y: 680))
 rightPage.line(to: NSPoint(x: 778, y: 735))
 rightPage.line(to: NSPoint(x: 778, y: 300))
-rightPage.curve(
-  to: NSPoint(x: 512, y: 330),
-  controlPoint1: NSPoint(x: 678, y: 278),
-  controlPoint2: NSPoint(x: 582, y: 298)
-)
+rightPage.line(to: NSPoint(x: 512, y: 330))
 rightPage.close()
 rightPage.stroke()
 
