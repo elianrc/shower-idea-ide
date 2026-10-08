@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
+    "package:mac": "npm run build && bash scripts/package-macos.sh",
+    "install:mac": "npm run package:mac && bash scripts/install-macos.sh",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -27,6 +29,7 @@
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^5.2.0",
     "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.6",

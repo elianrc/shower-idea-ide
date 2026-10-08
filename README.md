@@ -37,6 +37,18 @@ Verification:
 npm run verify
 ```
 
+## Install on macOS
+
+Build the native app bundle, copy it to `/Applications`, and launch it:
+
+```bash
+npm run install:mac
+```
+
+Once it opens, right-click its Dock icon and choose **Options > Keep in Dock**.
+Re-run the same command whenever you want to replace the installed app with a
+new local build.
+
 Task metadata is stored in Electron's application data directory. Task worktrees are stored alongside that metadata rather than inside the opened repository.
 
 ## Architecture

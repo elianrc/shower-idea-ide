@@ -1,0 +1,16 @@
+appId: com.showeridea.desktop
+productName: Shower Idea
+
+directories:
+  output: release
+
+files:
+  - dist/**/*
+  - package.json
+
+asar: true
+
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - dir
