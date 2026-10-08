@@ -4,7 +4,7 @@ set -euo pipefail
 
 repository_root="$(cd "$(dirname "$0")/.." && pwd)"
 source_icon="$repository_root/build/icon.png"
-iconset="$repository_root/build/ShowerIdea.iconset"
+iconset="$repository_root/build/Vivlio.iconset"
 output_icon="$repository_root/build/icon.icns"
 
 swift "$repository_root/scripts/generate-macos-icon.swift" "$source_icon"

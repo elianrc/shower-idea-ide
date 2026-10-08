@@ -1,5 +1,5 @@
-appId: com.showeridea.desktop
-productName: Shower Idea
+appId: com.vivlio.desktop
+productName: Vivlio
 
 directories:
   output: release
