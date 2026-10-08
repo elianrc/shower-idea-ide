@@ -19,48 +19,43 @@ tile.fill()
 
 NSColor.white.setStroke()
 
-let pipe = NSBezierPath()
-pipe.lineWidth = 54
-pipe.lineCapStyle = .round
-pipe.lineJoinStyle = .round
-pipe.move(to: NSPoint(x: 292, y: 718))
-pipe.curve(
-  to: NSPoint(x: 534, y: 720),
-  controlPoint1: NSPoint(x: 334, y: 824),
-  controlPoint2: NSPoint(x: 492, y: 824)
+let leftPage = NSBezierPath()
+leftPage.lineWidth = 38
+leftPage.lineCapStyle = .round
+leftPage.lineJoinStyle = .round
+leftPage.move(to: NSPoint(x: 512, y: 718))
+leftPage.curve(
+  to: NSPoint(x: 246, y: 696),
+  controlPoint1: NSPoint(x: 438, y: 776),
+  controlPoint2: NSPoint(x: 332, y: 770)
 )
-pipe.stroke()
+leftPage.line(to: NSPoint(x: 246, y: 300))
+leftPage.curve(
+  to: NSPoint(x: 512, y: 330),
+  controlPoint1: NSPoint(x: 346, y: 278),
+  controlPoint2: NSPoint(x: 442, y: 298)
+)
+leftPage.close()
+leftPage.stroke()
 
-let head = NSBezierPath()
-head.lineWidth = 54
-head.lineCapStyle = .round
-head.move(to: NSPoint(x: 506, y: 724))
-head.line(to: NSPoint(x: 690, y: 606))
-head.stroke()
-
-let waterLines: [(NSPoint, NSPoint)] = [
-  (NSPoint(x: 468, y: 544), NSPoint(x: 382, y: 410)),
-  (NSPoint(x: 558, y: 492), NSPoint(x: 472, y: 358)),
-  (NSPoint(x: 648, y: 440), NSPoint(x: 562, y: 306)),
-]
-
-for (start, end) in waterLines {
-  let line = NSBezierPath()
-  line.lineWidth = 38
-  line.lineCapStyle = .round
-  line.move(to: start)
-  line.line(to: end)
-  line.stroke()
-}
-
-let sparkle = NSBezierPath()
-sparkle.lineWidth = 30
-sparkle.lineCapStyle = .round
-sparkle.move(to: NSPoint(x: 732, y: 792))
-sparkle.line(to: NSPoint(x: 732, y: 684))
-sparkle.move(to: NSPoint(x: 678, y: 738))
-sparkle.line(to: NSPoint(x: 786, y: 738))
-sparkle.stroke()
+let rightPage = NSBezierPath()
+rightPage.lineWidth = 38
+rightPage.lineCapStyle = .round
+rightPage.lineJoinStyle = .round
+rightPage.move(to: NSPoint(x: 512, y: 718))
+rightPage.curve(
+  to: NSPoint(x: 778, y: 696),
+  controlPoint1: NSPoint(x: 586, y: 776),
+  controlPoint2: NSPoint(x: 692, y: 770)
+)
+rightPage.line(to: NSPoint(x: 778, y: 300))
+rightPage.curve(
+  to: NSPoint(x: 512, y: 330),
+  controlPoint1: NSPoint(x: 678, y: 278),
+  controlPoint2: NSPoint(x: 582, y: 298)
+)
+rightPage.close()
+rightPage.stroke()
 
 image.unlockFocus()
 
