@@ -49,7 +49,7 @@ export function TaskDetail({ task }: { task: Task }) {
   const sendMessage = async () => {
     const value = message.trim()
     if (!value) return
-    await run(() => window.showerIdea.tasks.sendMessage(task.id, value))
+    await run(() => window.vivlio.tasks.sendMessage(task.id, value))
     setMessage('')
     setTab('activity')
   }
@@ -64,17 +64,17 @@ export function TaskDetail({ task }: { task: Task }) {
         </div>
         <div className="task-actions">
           {isRunning ? (
-            <button className="secondary-button danger" disabled={busy} onClick={() => void run(() => window.showerIdea.tasks.cancel(task.id))} type="button">
+            <button className="secondary-button danger" disabled={busy} onClick={() => void run(() => window.vivlio.tasks.cancel(task.id))} type="button">
               <Square size={13} /> Stop
             </button>
           ) : null}
           {canReview && task.status !== 'committed' ? (
-            <button className="secondary-button" disabled={busy} onClick={() => void run(() => window.showerIdea.tasks.runVerification(task.id))} type="button">
+            <button className="secondary-button" disabled={busy} onClick={() => void run(() => window.vivlio.tasks.runVerification(task.id))} type="button">
               <Play size={14} /> Verify again
             </button>
           ) : null}
           {task.status === 'ready_for_review' ? (
-            <button className="primary-button" disabled={busy || task.changedFiles.length === 0} onClick={() => void run(() => window.showerIdea.tasks.approve(task.id))} type="button">
+            <button className="primary-button" disabled={busy || task.changedFiles.length === 0} onClick={() => void run(() => window.vivlio.tasks.approve(task.id))} type="button">
               <Check size={15} /> Approve & commit
             </button>
           ) : null}

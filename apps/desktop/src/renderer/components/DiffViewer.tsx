@@ -31,7 +31,7 @@ export default function DiffViewer({ taskId, filePath }: { taskId: string; fileP
     let active = true
     setDiff(null)
     setError(null)
-    void window.showerIdea.tasks.getDiff(taskId, filePath).then(
+    void window.vivlio.tasks.getDiff(taskId, filePath).then(
       (result) => { if (active) setDiff(result) },
       (reason: unknown) => { if (active) setError(reason instanceof Error ? reason.message : String(reason)) },
     )
@@ -46,7 +46,7 @@ export default function DiffViewer({ taskId, filePath }: { taskId: string; fileP
     <div className="diff-editor-shell">
       <Editor
         beforeMount={(monaco) => {
-          monaco.editor.defineTheme('shower-idea-diff', {
+          monaco.editor.defineTheme('vivlio-diff', {
             base: 'vs-dark',
             inherit: true,
             rules: [
@@ -76,7 +76,7 @@ export default function DiffViewer({ taskId, filePath }: { taskId: string; fileP
           smoothScrolling: true,
           wordWrap: 'off',
         }}
-        theme="shower-idea-diff"
+        theme="vivlio-diff"
         value={diff.raw}
       />
     </div>

@@ -32,4 +32,4 @@ const api: AppApi = {
   },
 }
 
-contextBridge.exposeInMainWorld('showerIdea', api)
+contextBridge.exposeInMainWorld('vivlio', api)

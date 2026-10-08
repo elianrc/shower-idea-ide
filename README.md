@@ -1,6 +1,6 @@
-# Shower Idea
+# Vivlio
 
-Shower Idea is an agent-first desktop development environment. Work begins with an intent, runs in an isolated Git worktree, passes through verification and review, and only becomes a commit after explicit human approval.
+Vivlio is an agent-first desktop development environment. Work begins with an intent, runs in an isolated Git worktree, passes through verification and review, and only becomes a commit after explicit human approval.
 
 The product and architecture source of truth is [docs/product-architecture-spec.md](docs/product-architecture-spec.md).
 

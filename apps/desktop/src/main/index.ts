@@ -4,7 +4,7 @@ import { app, BrowserWindow, shell } from 'electron'
 import { registerIpc } from './ipc'
 
 const currentDirectory = fileURLToPath(new URL('.', import.meta.url))
-app.setName('Shower Idea')
+app.setName('Vivlio')
 
 async function createWindow(): Promise<void> {
   const window = new BrowserWindow({

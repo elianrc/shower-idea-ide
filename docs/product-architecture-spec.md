@@ -2,7 +2,7 @@
 ## Product & Architecture Specification — v0.1
 
 **Status:** Initial specification  
-**Working name:** TBD  
+**Product name:** Vivlio
 **Primary platform:** Desktop  
 **Initial stack:** Electron + React + TypeScript  
 **Primary philosophy:** Intent → Agent → Verify → Review → Ship

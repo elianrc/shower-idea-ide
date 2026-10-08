@@ -23,7 +23,7 @@ export function Sidebar({ project, tasks }: { project: Project; tasks: Task[] })
     <aside className="sidebar">
       <div className="sidebar-drag-region">
         <BrandMark size={25} />
-        <span>Shower Idea</span>
+        <span>Vivlio</span>
       </div>
 
       <nav aria-label="Workspace" className="main-nav">

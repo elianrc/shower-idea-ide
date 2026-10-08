@@ -43,18 +43,18 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   async initialize() {
     try {
-      const snapshot = await window.showerIdea.workspace.getSnapshot()
+      const snapshot = await window.vivlio.workspace.getSnapshot()
       const [branches, repositoryStatus] = snapshot.project
         ? await Promise.all([
-            window.showerIdea.branches.list(),
-            window.showerIdea.workspace.getRepositoryStatus(),
+            window.vivlio.branches.list(),
+            window.vivlio.workspace.getRepositoryStatus(),
           ])
         : [[], null]
       set({ ...snapshot, branches, repositoryStatus, isLoading: false })
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
     }
-    return window.showerIdea.events.onWorkspaceChanged((snapshot) => {
+    return window.vivlio.events.onWorkspaceChanged((snapshot) => {
       const selectedTaskId = get().selectedTaskId
       set({
         ...snapshot,
@@ -68,11 +68,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   async openRepository() {
     set({ isLoading: true, error: null })
     try {
-      const snapshot = await window.showerIdea.workspace.openRepository()
+      const snapshot = await window.vivlio.workspace.openRepository()
       const [branches, repositoryStatus] = snapshot.project
         ? await Promise.all([
-            window.showerIdea.branches.list(),
-            window.showerIdea.workspace.getRepositoryStatus(),
+            window.vivlio.branches.list(),
+            window.vivlio.workspace.getRepositoryStatus(),
           ])
         : [[], null]
       set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedTaskId: null, view: 'tasks' })
@@ -85,10 +85,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (projectId === get().project?.id) return
     set({ isLoading: true, error: null })
     try {
-      const snapshot = await window.showerIdea.workspace.selectRepository(projectId)
+      const snapshot = await window.vivlio.workspace.selectRepository(projectId)
       const [branches, repositoryStatus] = await Promise.all([
-        window.showerIdea.branches.list(),
-        window.showerIdea.workspace.getRepositoryStatus(),
+        window.vivlio.branches.list(),
+        window.vivlio.workspace.getRepositoryStatus(),
       ])
       set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedTaskId: null, view: 'tasks' })
     } catch (error) {
@@ -99,7 +99,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   async refreshBranches() {
     if (!get().project) return
     try {
-      set({ branches: await window.showerIdea.branches.list() })
+      set({ branches: await window.vivlio.branches.list() })
     } catch (error) {
       set({ error: errorMessage(error) })
     }
@@ -108,7 +108,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   async refreshRepositoryStatus(taskId) {
     if (!get().project) return
     try {
-      set({ repositoryStatus: await window.showerIdea.workspace.getRepositoryStatus(taskId) })
+      set({ repositoryStatus: await window.vivlio.workspace.getRepositoryStatus(taskId) })
     } catch {
       set({ repositoryStatus: null })
     }
@@ -117,10 +117,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   async switchBranch(name) {
     set({ isLoading: true, error: null })
     try {
-      const snapshot = await window.showerIdea.branches.switch(name)
+      const snapshot = await window.vivlio.branches.switch(name)
       const [branches, repositoryStatus] = await Promise.all([
-        window.showerIdea.branches.list(),
-        window.showerIdea.workspace.getRepositoryStatus(),
+        window.vivlio.branches.list(),
+        window.vivlio.workspace.getRepositoryStatus(),
       ])
       set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedTaskId: null, view: 'tasks' })
       return true
@@ -133,10 +133,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   async createBranch(name, baseBranch) {
     set({ isLoading: true, error: null })
     try {
-      const snapshot = await window.showerIdea.branches.create(name, baseBranch)
+      const snapshot = await window.vivlio.branches.create(name, baseBranch)
       const [branches, repositoryStatus] = await Promise.all([
-        window.showerIdea.branches.list(),
-        window.showerIdea.workspace.getRepositoryStatus(),
+        window.vivlio.branches.list(),
+        window.vivlio.workspace.getRepositoryStatus(),
       ])
       set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedTaskId: null, view: 'tasks' })
       return true
@@ -149,7 +149,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   async createTask(input) {
     set({ isLoading: true, error: null })
     try {
-      const task = await window.showerIdea.tasks.create(input)
+      const task = await window.vivlio.tasks.create(input)
       set({ isLoading: false, isNewTaskOpen: false, selectedTaskId: task.id })
       return task
     } catch (error) {

@@ -8,7 +8,7 @@ declare global {
   var MonacoEnvironment: MonacoEnvironment
 
   interface Window {
-    showerIdea: AppApi
+    vivlio: AppApi
   }
 }
 

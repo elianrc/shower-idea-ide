@@ -16,13 +16,13 @@ describe('GitService', () => {
   let git: GitService
 
   beforeEach(async () => {
-    fixtureRoot = await mkdtemp(join(tmpdir(), 'shower-idea-git-'))
+    fixtureRoot = await mkdtemp(join(tmpdir(), 'vivlio-git-'))
     repository = join(fixtureRoot, 'project')
     worktree = join(fixtureRoot, 'worktree')
     await mkdir(repository)
     await execute('git', ['init', '-b', 'main'], { cwd: repository })
-    await execute('git', ['config', 'user.name', 'Shower Idea Tests'], { cwd: repository })
-    await execute('git', ['config', 'user.email', 'tests@shower-idea.local'], { cwd: repository })
+    await execute('git', ['config', 'user.name', 'Vivlio Tests'], { cwd: repository })
+    await execute('git', ['config', 'user.email', 'tests@vivlio.local'], { cwd: repository })
     await writeFile(join(repository, 'README.md'), '# Fixture\n', 'utf8')
     await execute('git', ['add', 'README.md'], { cwd: repository })
     await execute('git', ['commit', '-m', 'Initial commit'], { cwd: repository })
