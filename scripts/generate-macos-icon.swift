@@ -23,12 +23,8 @@ let leftPage = NSBezierPath()
 leftPage.lineWidth = 38
 leftPage.lineCapStyle = .round
 leftPage.lineJoinStyle = .round
-leftPage.move(to: NSPoint(x: 512, y: 718))
-leftPage.curve(
-  to: NSPoint(x: 246, y: 696),
-  controlPoint1: NSPoint(x: 438, y: 776),
-  controlPoint2: NSPoint(x: 332, y: 770)
-)
+leftPage.move(to: NSPoint(x: 512, y: 680))
+leftPage.line(to: NSPoint(x: 246, y: 735))
 leftPage.line(to: NSPoint(x: 246, y: 300))
 leftPage.curve(
   to: NSPoint(x: 512, y: 330),
@@ -42,12 +38,8 @@ let rightPage = NSBezierPath()
 rightPage.lineWidth = 38
 rightPage.lineCapStyle = .round
 rightPage.lineJoinStyle = .round
-rightPage.move(to: NSPoint(x: 512, y: 718))
-rightPage.curve(
-  to: NSPoint(x: 778, y: 696),
-  controlPoint1: NSPoint(x: 586, y: 776),
-  controlPoint2: NSPoint(x: 692, y: 770)
-)
+rightPage.move(to: NSPoint(x: 512, y: 680))
+rightPage.line(to: NSPoint(x: 778, y: 735))
 rightPage.line(to: NSPoint(x: 778, y: 300))
 rightPage.curve(
   to: NSPoint(x: 512, y: 330),
