@@ -23,10 +23,10 @@ let leftPage = NSBezierPath()
 leftPage.lineWidth = 38
 leftPage.lineCapStyle = .butt
 leftPage.lineJoinStyle = .miter
-leftPage.move(to: NSPoint(x: 512, y: 680))
-leftPage.line(to: NSPoint(x: 246, y: 735))
-leftPage.line(to: NSPoint(x: 246, y: 300))
-leftPage.line(to: NSPoint(x: 512, y: 330))
+leftPage.move(to: NSPoint(x: 496, y: 778))
+leftPage.line(to: NSPoint(x: 300, y: 624))
+leftPage.line(to: NSPoint(x: 300, y: 238))
+leftPage.line(to: NSPoint(x: 496, y: 374))
 leftPage.close()
 leftPage.stroke()
 
@@ -34,10 +34,10 @@ let rightPage = NSBezierPath()
 rightPage.lineWidth = 38
 rightPage.lineCapStyle = .butt
 rightPage.lineJoinStyle = .miter
-rightPage.move(to: NSPoint(x: 512, y: 680))
-rightPage.line(to: NSPoint(x: 778, y: 735))
-rightPage.line(to: NSPoint(x: 778, y: 300))
-rightPage.line(to: NSPoint(x: 512, y: 330))
+rightPage.move(to: NSPoint(x: 532, y: 766))
+rightPage.line(to: NSPoint(x: 724, y: 610))
+rightPage.line(to: NSPoint(x: 724, y: 252))
+rightPage.line(to: NSPoint(x: 496, y: 374))
 rightPage.close()
 rightPage.stroke()
 
