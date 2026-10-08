@@ -19,27 +19,25 @@ tile.fill()
 
 NSColor.white.setStroke()
 
-let leftPage = NSBezierPath()
-leftPage.lineWidth = 38
-leftPage.lineCapStyle = .butt
-leftPage.lineJoinStyle = .miter
-leftPage.move(to: NSPoint(x: 496, y: 778))
-leftPage.line(to: NSPoint(x: 300, y: 624))
-leftPage.line(to: NSPoint(x: 300, y: 238))
-leftPage.line(to: NSPoint(x: 496, y: 374))
-leftPage.close()
-leftPage.stroke()
+let bookOutline = NSBezierPath()
+bookOutline.lineWidth = 38
+bookOutline.lineCapStyle = .butt
+bookOutline.lineJoinStyle = .miter
+bookOutline.move(to: NSPoint(x: 512, y: 778))
+bookOutline.line(to: NSPoint(x: 300, y: 618))
+bookOutline.line(to: NSPoint(x: 300, y: 246))
+bookOutline.line(to: NSPoint(x: 512, y: 374))
+bookOutline.line(to: NSPoint(x: 724, y: 246))
+bookOutline.line(to: NSPoint(x: 724, y: 618))
+bookOutline.close()
+bookOutline.stroke()
 
-let rightPage = NSBezierPath()
-rightPage.lineWidth = 38
-rightPage.lineCapStyle = .butt
-rightPage.lineJoinStyle = .miter
-rightPage.move(to: NSPoint(x: 532, y: 766))
-rightPage.line(to: NSPoint(x: 724, y: 610))
-rightPage.line(to: NSPoint(x: 724, y: 252))
-rightPage.line(to: NSPoint(x: 496, y: 374))
-rightPage.close()
-rightPage.stroke()
+let spine = NSBezierPath()
+spine.lineWidth = 38
+spine.lineCapStyle = .butt
+spine.move(to: NSPoint(x: 512, y: 778))
+spine.line(to: NSPoint(x: 512, y: 374))
+spine.stroke()
 
 image.unlockFocus()
 
