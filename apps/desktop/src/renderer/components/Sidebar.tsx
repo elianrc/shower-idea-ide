@@ -1,23 +1,23 @@
-import { Clock3, Code2, GitCompareArrows, ListTodo, Plus } from 'lucide-react'
-import type { Project, Task } from '../../shared/types'
+import { Clock3, Code2, GitCompareArrows, MessagesSquare, Plus } from 'lucide-react'
+import type { Project, Session } from '../../shared/types'
 import { useAppStore } from '../store'
 import { BrandMark } from './BrandMark'
 import { StatusPill } from './StatusPill'
 
 const navigation = [
-  { id: 'tasks' as const, label: 'Tasks', icon: ListTodo },
+  { id: 'sessions' as const, label: 'Sessions', icon: MessagesSquare },
   { id: 'changes' as const, label: 'Changes', icon: GitCompareArrows },
   { id: 'history' as const, label: 'History', icon: Clock3 },
   { id: 'code' as const, label: 'Code', icon: Code2 },
 ]
 
-export function Sidebar({ project, tasks }: { project: Project; tasks: Task[] }) {
+export function Sidebar({ project, sessions }: { project: Project; sessions: Session[] }) {
   const view = useAppStore((state) => state.view)
-  const selectedTaskId = useAppStore((state) => state.selectedTaskId)
+  const selectedSessionId = useAppStore((state) => state.selectedSessionId)
   const setView = useAppStore((state) => state.setView)
-  const selectTask = useAppStore((state) => state.selectTask)
-  const setNewTaskOpen = useAppStore((state) => state.setNewTaskOpen)
-  const activeTasks = tasks.filter((task) => !['committed', 'cancelled'].includes(task.status)).slice(0, 5)
+  const selectSession = useAppStore((state) => state.selectSession)
+  const setNewSessionOpen = useAppStore((state) => state.setNewSessionOpen)
+  const recentSessions = sessions.filter((session) => session.status !== 'completed').slice(0, 8)
 
   return (
     <aside className="sidebar">
@@ -31,7 +31,7 @@ export function Sidebar({ project, tasks }: { project: Project; tasks: Task[] })
           const Icon = item.icon
           return (
             <button
-              className={view === item.id && !selectedTaskId ? 'nav-item active' : 'nav-item'}
+              className={view === item.id && !selectedSessionId ? 'nav-item active' : 'nav-item'}
               key={item.id}
               onClick={() => setView(item.id)}
               type="button"
@@ -43,24 +43,24 @@ export function Sidebar({ project, tasks }: { project: Project; tasks: Task[] })
         })}
       </nav>
 
-      <div className="sidebar-section">
+      <div className="sidebar-section sessions-sidebar-section">
         <div className="section-label-row">
-          <span className="section-label">Active tasks</span>
-          <button aria-label="Create task" className="icon-button subtle" onClick={() => setNewTaskOpen(true)} type="button">
+          <span className="section-label">Agent sessions</span>
+          <button aria-label="Start session" className="icon-button subtle" onClick={() => setNewSessionOpen(true)} type="button">
             <Plus size={15} />
           </button>
         </div>
         <div className="compact-task-list">
-          {activeTasks.length === 0 ? <p className="sidebar-empty">Nothing in flight</p> : null}
-          {activeTasks.map((task) => (
+          {recentSessions.length === 0 ? <p className="sidebar-empty">No sessions yet</p> : null}
+          {recentSessions.map((session) => (
             <button
-              className={selectedTaskId === task.id ? 'compact-task active' : 'compact-task'}
-              key={task.id}
-              onClick={() => selectTask(task.id)}
+              className={selectedSessionId === session.id ? 'compact-task active' : 'compact-task'}
+              key={session.id}
+              onClick={() => selectSession(session.id)}
               type="button"
             >
-              <StatusPill compact status={task.status} />
-              <span>{task.title}</span>
+              <StatusPill compact status={session.status} />
+              <span>{session.title}</span>
             </button>
           ))}
         </div>

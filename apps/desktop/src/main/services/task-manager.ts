@@ -2,9 +2,9 @@ import { randomUUID } from 'node:crypto'
 import { mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type {
-  CreateTaskInput,
-  Task,
-  TaskActivity,
+  CreateSessionInput,
+  Session,
+  SessionActivity,
   VerificationResult,
   WorkspaceSnapshot,
 } from '../../shared/types'
@@ -15,7 +15,7 @@ import { WorkspaceStore } from './store'
 
 const MAX_ACTIVITY_ENTRIES = 500
 
-export class TaskManager {
+export class SessionManager {
   constructor(
     private readonly store: WorkspaceStore,
     private readonly git: GitService,
@@ -25,35 +25,37 @@ export class TaskManager {
     private readonly onChange: (snapshot: WorkspaceSnapshot) => void,
   ) {}
 
-  get(taskId: string): Task | null {
-    const task = this.store.getTask(taskId)
-    return task ? structuredClone(task) : null
+  get(sessionId: string): Session | null {
+    const session = this.store.getSession(sessionId)
+    return session ? structuredClone(session) : null
   }
 
-  async getDiff(taskId: string, filePath?: string) {
-    const task = this.requireTask(taskId)
-    return this.git.getDiff(taskId, task.worktreePath, filePath)
+  async getDiff(sessionId: string, filePath?: string) {
+    const session = this.requireSession(sessionId)
+    return this.git.getDiff(sessionId, session.workspacePath, filePath)
   }
 
-  async create(input: CreateTaskInput): Promise<Task> {
+  async create(input: CreateSessionInput): Promise<Session> {
     const project = this.store.getProject()
-    if (!project) throw new Error('Open a Git repository before creating a task.')
+    if (!project) throw new Error('Open a Git repository before starting a session.')
     const prompt = input.prompt.trim()
-    if (!prompt) throw new Error('Describe what you want to change.')
+    if (!prompt) throw new Error('Enter a message for the agent.')
 
     const id = randomUUID()
-    const branch = `task/${slugify(prompt)}-${id.slice(0, 6)}`
-    const worktreePath = join(this.worktreesRoot, project.id, id)
+    const useWorktree = input.workspaceMode === 'worktree'
+    const branch = useWorktree ? `session/${slugify(prompt)}-${id.slice(0, 6)}` : project.branch
+    const workspacePath = useWorktree ? join(this.worktreesRoot, project.id, id) : project.path
     const now = new Date().toISOString()
-    const task: Task = {
+    const session: Session = {
       id,
       projectId: project.id,
       title: makeTitle(prompt),
-      prompt,
-      status: 'planning',
+      initialPrompt: prompt,
+      status: 'starting',
       branch,
-      worktreePath,
-      agent: 'codex',
+      workspacePath,
+      workspaceMode: input.workspaceMode,
+      agent: input.agent,
       permission: input.permission,
       summary: '',
       createdAt: now,
@@ -67,67 +69,67 @@ export class TaskManager {
       })),
       activity: [],
     }
-    await this.store.addTask(task)
-    this.emit()
+    await this.store.addSession(session)
+    await this.addActivity(id, 'message', prompt)
 
     try {
-      await mkdir(join(this.worktreesRoot, project.id), { recursive: true })
-      await this.addActivity(id, 'milestone', `Creating ${branch} from ${project.branch}.`)
-      await this.git.createWorktree(project.path, branch, worktreePath, project.branch)
-      await this.store.updateTask(id, (current) => {
-        current.status = 'working'
-      })
-      await this.addActivity(id, 'milestone', 'Isolated worktree is ready.')
-      void this.runAgent(id)
-      return this.requireTask(id)
-    } catch (error) {
-      return this.failTask(id, error)
-    }
-  }
-
-  async sendMessage(taskId: string, message: string): Promise<Task> {
-    const followUp = message.trim()
-    if (!followUp) throw new Error('Enter feedback for the agent.')
-    const task = this.requireTask(taskId)
-    if (task.status === 'working' || task.status === 'verifying') {
-      throw new Error('Wait for the current run to finish before requesting changes.')
-    }
-    await this.store.updateTask(taskId, (current) => {
-      current.status = 'changes_requested'
-      current.prompt = `${current.prompt}\n\nFollow-up request:\n${followUp}`
-      current.error = undefined
-      for (const result of current.verification) {
-        result.status = 'pending'
-        result.output = ''
-        result.durationMs = undefined
+      if (useWorktree) {
+        await mkdir(join(this.worktreesRoot, project.id), { recursive: true })
+        await this.addActivity(id, 'milestone', `Creating an isolated worktree from ${project.branch}.`)
+        await this.git.createWorktree(project.path, branch, workspacePath, project.branch)
+        await this.addActivity(id, 'milestone', `Worktree ready on ${branch}.`)
+      } else {
+        await this.addActivity(id, 'milestone', `Connected to the current ${project.branch} branch.`)
       }
-    })
-    await this.addActivity(taskId, 'message', followUp)
-    await this.store.updateTask(taskId, (current) => {
-      current.status = 'working'
-    })
-    void this.runAgent(taskId)
-    return this.requireTask(taskId)
+      await this.store.updateSession(id, (current) => {
+        current.status = 'running'
+      })
+      void this.runAgent(id, prompt)
+      return this.requireSession(id)
+    } catch (error) {
+      return this.failSession(id, error)
+    }
   }
 
-  async cancel(taskId: string): Promise<Task> {
-    this.agent.cancel(taskId)
-    this.processes.cancel(`verify:${taskId}`)
-    await this.store.updateTask(taskId, (task) => {
-      task.status = 'cancelled'
-      task.completedAt = new Date().toISOString()
+  async sendMessage(sessionId: string, message: string): Promise<Session> {
+    const followUp = message.trim()
+    if (!followUp) throw new Error('Enter a message for the agent.')
+    const session = this.requireSession(sessionId)
+    if (session.status === 'running' || session.status === 'starting' || session.status === 'verifying') {
+      throw new Error('Wait for the current agent turn to finish.')
+    }
+    if (session.status === 'completed') {
+      throw new Error('This session has already been committed. Start a new session to continue.')
+    }
+    await this.store.updateSession(sessionId, (current) => {
+      current.status = 'running'
+      current.error = undefined
     })
-    await this.addActivity(taskId, 'milestone', 'Task cancelled by the user.')
-    return this.requireTask(taskId)
+    await this.addActivity(sessionId, 'message', followUp)
+    void this.runAgent(sessionId, followUp)
+    return this.requireSession(sessionId)
   }
 
-  async runVerification(taskId: string): Promise<Task> {
-    const task = this.requireTask(taskId)
-    const commands = task.verification.length
-      ? task.verification.map((result) => result.command)
-      : await inferVerificationCommands(task.worktreePath)
+  async stop(sessionId: string): Promise<Session> {
+    this.agent.cancel(sessionId)
+    this.processes.cancel(`verify:${sessionId}`)
+    await this.store.updateSession(sessionId, (session) => {
+      session.status = 'stopped'
+    })
+    await this.addActivity(sessionId, 'milestone', 'Session stopped. You can resume it with another message.')
+    return this.requireSession(sessionId)
+  }
 
-    await this.store.updateTask(taskId, (current) => {
+  async runVerification(sessionId: string): Promise<Session> {
+    const session = this.requireSession(sessionId)
+    if (session.status === 'running' || session.status === 'starting') {
+      throw new Error('Wait for the agent turn to finish before running checks.')
+    }
+    const commands = session.verification.length
+      ? session.verification.map((result) => result.command)
+      : await inferVerificationCommands(session.workspacePath)
+
+    await this.store.updateSession(sessionId, (current) => {
       current.status = 'verifying'
       current.verification = commands.map((command) => ({
         id: randomUUID(),
@@ -139,142 +141,144 @@ export class TaskManager {
     this.emit()
 
     if (commands.length === 0) {
-      await this.addActivity(taskId, 'milestone', 'No verification commands were detected.')
-      await this.store.updateTask(taskId, (current) => {
-        current.status = 'ready_for_review'
+      await this.addActivity(sessionId, 'milestone', 'No verification commands were detected.')
+      await this.store.updateSession(sessionId, (current) => {
+        current.status = 'waiting'
       })
       this.emit()
-      return this.requireTask(taskId)
+      return this.requireSession(sessionId)
     }
 
     let failed = false
     for (let index = 0; index < commands.length; index += 1) {
       const command = commands[index]
-      await this.updateVerification(taskId, index, { status: 'running' })
-      await this.addActivity(taskId, 'command', command)
+      await this.updateVerification(sessionId, index, { status: 'running' })
+      await this.addActivity(sessionId, 'command', command)
       const startedAt = Date.now()
-      const result = await this.processes.runShell(command, task.worktreePath, `verify:${taskId}`)
+      const result = await this.processes.runShell(command, session.workspacePath, `verify:${sessionId}`)
       const output = [result.stdout, result.stderr].filter(Boolean).join('\n').trim()
       const status = result.code === 0 ? 'passed' : 'failed'
-      await this.updateVerification(taskId, index, {
+      await this.updateVerification(sessionId, index, {
         status,
         output: output.slice(-20_000),
         durationMs: Date.now() - startedAt,
       })
-      if (this.requireTask(taskId).status === 'cancelled') return this.requireTask(taskId)
+      if (this.requireSession(sessionId).status === 'stopped') return this.requireSession(sessionId)
       if (result.code !== 0) failed = true
     }
 
-    await this.refreshChanges(taskId)
-    await this.store.updateTask(taskId, (current) => {
-      current.status = 'ready_for_review'
-      if (failed) current.summary = 'Implementation is ready for review, with verification warnings.'
+    await this.refreshChanges(sessionId)
+    await this.store.updateSession(sessionId, (current) => {
+      current.status = 'waiting'
     })
     await this.addActivity(
-      taskId,
+      sessionId,
       failed ? 'error' : 'milestone',
-      failed ? 'Verification completed with failures.' : 'All verification checks passed.',
+      failed ? 'Checks completed with failures.' : 'All checks passed.',
     )
     this.emit()
-    return this.requireTask(taskId)
+    return this.requireSession(sessionId)
   }
 
-  async approve(taskId: string): Promise<Task> {
-    const task = this.requireTask(taskId)
-    if (!['ready_for_review', 'approved'].includes(task.status)) {
-      throw new Error('This task is not ready for approval.')
+  async commit(sessionId: string): Promise<Session> {
+    const session = this.requireSession(sessionId)
+    if (session.status === 'running' || session.status === 'starting' || session.status === 'verifying') {
+      throw new Error('Wait for the active process to finish before committing.')
     }
-    if (task.changedFiles.length === 0) throw new Error('There are no changes to commit.')
-    await this.store.updateTask(taskId, (current) => {
-      current.status = 'approved'
-    })
-    this.emit()
+    await this.refreshChanges(sessionId)
+    if (this.requireSession(sessionId).changedFiles.length === 0) throw new Error('There are no changes to commit.')
     try {
-      const commit = await this.git.commit(task.worktreePath, task.title)
-      await this.store.updateTask(taskId, (current) => {
-        current.status = 'committed'
+      const commit = await this.git.commit(session.workspacePath, session.title)
+      await this.store.updateSession(sessionId, (current) => {
+        current.status = 'completed'
         current.commit = commit
         current.completedAt = new Date().toISOString()
       })
-      await this.addActivity(taskId, 'milestone', `Approved and committed as ${commit}.`)
-      return this.requireTask(taskId)
+      await this.addActivity(sessionId, 'milestone', `Committed changes as ${commit}.`)
+      return this.requireSession(sessionId)
     } catch (error) {
-      return this.failTask(taskId, error)
+      return this.failSession(sessionId, error)
     }
   }
 
-  private async runAgent(taskId: string): Promise<void> {
-    const task = this.requireTask(taskId)
+  private async runAgent(sessionId: string, prompt: string): Promise<void> {
+    const session = this.requireSession(sessionId)
     this.emit()
     try {
-      const result = await this.agent.startTask(task, {
+      const result = await this.agent.run(session, prompt, {
         onEvent: (kind, text) => {
-          void this.addActivity(taskId, kind, text.slice(0, 8_000))
+          void this.addActivity(sessionId, kind, text.slice(0, 8_000))
+        },
+        onProviderSessionId: (providerSessionId) => {
+          void this.store.updateSession(sessionId, (current) => {
+            current.providerSessionId = providerSessionId
+          }).then(() => this.emit())
         },
       })
-      if (this.requireTask(taskId).status === 'cancelled') return
+      if (this.requireSession(sessionId).status === 'stopped') return
       if (result.code !== 0) {
         throw new Error(result.stderr.trim() || `Agent exited with status ${result.code}.`)
       }
-      await this.refreshChanges(taskId)
-      await this.store.updateTask(taskId, (current) => {
-        current.summary = summarizeTask(current)
+      await this.refreshChanges(sessionId)
+      await this.store.updateSession(sessionId, (current) => {
+        current.status = 'waiting'
+        current.summary = summarizeSession(current)
       })
-      await this.addActivity(taskId, 'milestone', 'Agent completed its implementation.')
-      await this.runVerification(taskId)
+      await this.addActivity(sessionId, 'milestone', 'Codex is ready for your next message.')
+      this.emit()
     } catch (error) {
-      await this.failTask(taskId, error)
+      await this.failSession(sessionId, error)
     }
   }
 
-  private async refreshChanges(taskId: string): Promise<void> {
-    const task = this.requireTask(taskId)
-    const changedFiles = await this.git.getChangedFiles(task.worktreePath)
-    await this.store.updateTask(taskId, (current) => {
+  private async refreshChanges(sessionId: string): Promise<void> {
+    const session = this.requireSession(sessionId)
+    const changedFiles = await this.git.getChangedFiles(session.workspacePath)
+    await this.store.updateSession(sessionId, (current) => {
       current.changedFiles = changedFiles
     })
   }
 
   private async updateVerification(
-    taskId: string,
+    sessionId: string,
     index: number,
     update: Partial<VerificationResult>,
   ): Promise<void> {
-    await this.store.updateTask(taskId, (task) => {
-      task.verification[index] = { ...task.verification[index], ...update }
+    await this.store.updateSession(sessionId, (session) => {
+      session.verification[index] = { ...session.verification[index], ...update }
     })
     this.emit()
   }
 
   private async addActivity(
-    taskId: string,
-    kind: TaskActivity['kind'],
+    sessionId: string,
+    kind: SessionActivity['kind'],
     text: string,
   ): Promise<void> {
     if (!text.trim()) return
-    await this.store.updateTask(taskId, (task) => {
-      task.activity.push({ id: randomUUID(), taskId, kind, text, createdAt: new Date().toISOString() })
-      if (task.activity.length > MAX_ACTIVITY_ENTRIES) {
-        task.activity = task.activity.slice(-MAX_ACTIVITY_ENTRIES)
+    await this.store.updateSession(sessionId, (session) => {
+      session.activity.push({ id: randomUUID(), sessionId, kind, text, createdAt: new Date().toISOString() })
+      if (session.activity.length > MAX_ACTIVITY_ENTRIES) {
+        session.activity = session.activity.slice(-MAX_ACTIVITY_ENTRIES)
       }
     })
     this.emit()
   }
 
-  private async failTask(taskId: string, error: unknown): Promise<Task> {
+  private async failSession(sessionId: string, error: unknown): Promise<Session> {
     const message = error instanceof Error ? error.message : String(error)
-    await this.store.updateTask(taskId, (task) => {
-      task.status = 'failed'
-      task.error = message
+    await this.store.updateSession(sessionId, (session) => {
+      session.status = 'failed'
+      session.error = message
     })
-    await this.addActivity(taskId, 'error', message)
-    return this.requireTask(taskId)
+    await this.addActivity(sessionId, 'error', message)
+    return this.requireSession(sessionId)
   }
 
-  private requireTask(taskId: string): Task {
-    const task = this.store.getTask(taskId)
-    if (!task) throw new Error(`Task ${taskId} was not found.`)
-    return structuredClone(task)
+  private requireSession(sessionId: string): Session {
+    const session = this.store.getSession(sessionId)
+    if (!session) throw new Error(`Session ${sessionId} was not found.`)
+    return structuredClone(session)
   }
 
   private emit(): void {
@@ -287,7 +291,7 @@ export function slugify(input: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
-    .slice(0, 36) || 'task'
+    .slice(0, 36) || 'session'
 }
 
 export function makeTitle(prompt: string): string {
@@ -296,15 +300,15 @@ export function makeTitle(prompt: string): string {
   return title.charAt(0).toUpperCase() + title.slice(1)
 }
 
-function summarizeTask(task: Task): string {
-  const count = task.changedFiles.length
-  if (count === 0) return 'The agent completed without changing tracked project files.'
-  return `Implemented the request across ${count} changed ${count === 1 ? 'file' : 'files'}.`
+function summarizeSession(session: Session): string {
+  const count = session.changedFiles.length
+  if (count === 0) return 'Codex responded without changing project files.'
+  return `${count} changed ${count === 1 ? 'file' : 'files'} in this session.`
 }
 
-async function inferVerificationCommands(worktreePath: string): Promise<string[]> {
+async function inferVerificationCommands(workspacePath: string): Promise<string[]> {
   try {
-    const packageJson = JSON.parse(await readFile(join(worktreePath, 'package.json'), 'utf8')) as {
+    const packageJson = JSON.parse(await readFile(join(workspacePath, 'package.json'), 'utf8')) as {
       scripts?: Record<string, string>
     }
     const scripts = packageJson.scripts ?? {}

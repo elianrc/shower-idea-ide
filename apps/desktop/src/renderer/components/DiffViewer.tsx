@@ -3,7 +3,7 @@ import Editor, { loader } from '@monaco-editor/react'
 import { AlertCircle, FileDiff, LoaderCircle } from 'lucide-react'
 import * as monaco from 'monaco-editor/editor/editor.api'
 import EditorWorker from 'monaco-editor/editor/editor.worker?worker'
-import type { TaskDiff } from '../../shared/types'
+import type { SessionDiff } from '../../shared/types'
 
 globalThis.MonacoEnvironment = {
   getWorker: () => new EditorWorker(),
@@ -23,20 +23,20 @@ monaco.languages.setMonarchTokensProvider('diff', {
   },
 })
 
-export default function DiffViewer({ taskId, filePath }: { taskId: string; filePath?: string }) {
-  const [diff, setDiff] = useState<TaskDiff | null>(null)
+export default function DiffViewer({ sessionId, filePath }: { sessionId: string; filePath?: string }) {
+  const [diff, setDiff] = useState<SessionDiff | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
     setDiff(null)
     setError(null)
-    void window.vivlio.tasks.getDiff(taskId, filePath).then(
+    void window.vivlio.sessions.getDiff(sessionId, filePath).then(
       (result) => { if (active) setDiff(result) },
       (reason: unknown) => { if (active) setError(reason instanceof Error ? reason.message : String(reason)) },
     )
     return () => { active = false }
-  }, [filePath, taskId])
+  }, [filePath, sessionId])
 
   if (error) return <div className="inline-error"><AlertCircle size={16} />{error}</div>
   if (!diff) return <div className="loading-row"><LoaderCircle className="spin-slow" size={16} /> Loading diff…</div>

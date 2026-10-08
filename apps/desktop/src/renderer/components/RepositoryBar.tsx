@@ -12,16 +12,16 @@ import {
   Settings2,
   X,
 } from 'lucide-react'
-import type { BranchInfo, Project, Task } from '../../shared/types'
+import type { BranchInfo, Project, Session } from '../../shared/types'
 import { STATUS_LABELS } from '../../shared/types'
 import { useAppStore } from '../store'
 import { StatusPill } from './StatusPill'
 
 type OpenMenu = 'repository' | 'workspace' | 'branch' | null
 
-export function RepositoryBar({ project, selectedTask }: { project: Project; selectedTask: Task | null }) {
+export function RepositoryBar({ project, selectedSession }: { project: Project; selectedSession: Session | null }) {
   const projects = useAppStore((state) => state.projects)
-  const tasks = useAppStore((state) => state.tasks)
+  const sessions = useAppStore((state) => state.sessions)
   const branches = useAppStore((state) => state.branches)
   const repositoryStatus = useAppStore((state) => state.repositoryStatus)
   const isLoading = useAppStore((state) => state.isLoading)
@@ -29,7 +29,7 @@ export function RepositoryBar({ project, selectedTask }: { project: Project; sel
   const selectRepository = useAppStore((state) => state.selectRepository)
   const switchBranch = useAppStore((state) => state.switchBranch)
   const createBranch = useAppStore((state) => state.createBranch)
-  const selectTask = useAppStore((state) => state.selectTask)
+  const selectSession = useAppStore((state) => state.selectSession)
   const setView = useAppStore((state) => state.setView)
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null)
   const [branchQuery, setBranchQuery] = useState('')
@@ -55,14 +55,14 @@ export function RepositoryBar({ project, selectedTask }: { project: Project; sel
   const filteredBranches = branchQuery
     ? branches.filter((branch) => branch.name.toLowerCase().includes(branchQuery.toLowerCase()))
     : branches
-  const projectTasks = tasks.filter((task) => task.projectId === project.id && task.status !== 'cancelled')
-  const activeTasks = projectTasks.filter((task) => task.status !== 'committed')
-  const completedTasks = projectTasks.filter((task) => task.status === 'committed').slice(0, 3)
-  const displayedBranch = selectedTask?.branch ?? repositoryStatus?.branch ?? project.branch
-  const isWorkspaceClean = repositoryStatus?.isClean ?? (!selectedTask && project.isClean)
+  const projectSessions = sessions.filter((session) => session.projectId === project.id)
+  const activeSessions = projectSessions.filter((session) => session.status !== 'completed')
+  const completedSessions = projectSessions.filter((session) => session.status === 'completed').slice(0, 3)
+  const displayedBranch = selectedSession?.branch ?? repositoryStatus?.branch ?? project.branch
+  const isWorkspaceClean = repositoryStatus?.isClean ?? (!selectedSession && project.isClean)
   const cleanlinessLabel = repositoryStatus
     ? repositoryStatus.isClean ? 'No local changes' : 'Local changes'
-    : selectedTask ? 'Preparing workspace' : project.isClean ? 'No local changes' : 'Local changes'
+    : selectedSession ? 'Preparing workspace' : project.isClean ? 'No local changes' : 'Local changes'
 
   const chooseRepository = async (projectId: string) => {
     setOpenMenu(null)
@@ -75,12 +75,12 @@ export function RepositoryBar({ project, selectedTask }: { project: Project; sel
     await switchBranch(branch.name)
   }
 
-  const chooseWorkspace = (taskId: string | null) => {
+  const chooseWorkspace = (sessionId: string | null) => {
     setOpenMenu(null)
-    if (taskId) {
-      selectTask(taskId)
+    if (sessionId) {
+      selectSession(sessionId)
     } else {
-      setView('tasks')
+      setView('sessions')
     }
   }
 
@@ -151,7 +151,7 @@ export function RepositoryBar({ project, selectedTask }: { project: Project; sel
           <span className="repository-control-icon workspace"><FolderTree size={18} /></span>
           <span className="repository-control-copy">
             <small>Active workspace</small>
-            <strong>{selectedTask?.title ?? 'Main workspace'}</strong>
+            <strong>{selectedSession?.title ?? 'Main workspace'}</strong>
           </span>
           <ChevronDown size={14} />
         </button>
@@ -161,7 +161,7 @@ export function RepositoryBar({ project, selectedTask }: { project: Project; sel
             <div className="popover-title">Main workspace</div>
             <div className="repository-menu-list workspace-menu-list">
               <button
-                className={!selectedTask ? 'workspace-menu-row selected' : 'workspace-menu-row'}
+                className={!selectedSession ? 'workspace-menu-row selected' : 'workspace-menu-row'}
                 onClick={() => chooseWorkspace(null)}
                 type="button"
               >
@@ -170,38 +170,38 @@ export function RepositoryBar({ project, selectedTask }: { project: Project; sel
                   <strong>{project.name}</strong>
                   <small>{project.branch} · direct workspace</small>
                 </span>
-                {!selectedTask ? <Check size={15} /> : null}
+                {!selectedSession ? <Check size={15} /> : null}
               </button>
             </div>
 
-            <div className="popover-title workspace-section-title">Agent task worktrees</div>
+            <div className="popover-title workspace-section-title">Agent session workspaces</div>
             <div className="repository-menu-list workspace-menu-list task-worktree-list">
-              {activeTasks.length === 0 ? <p className="branch-empty">No active task worktrees</p> : null}
-              {activeTasks.map((task) => (
+              {activeSessions.length === 0 ? <p className="branch-empty">No active sessions</p> : null}
+              {activeSessions.map((session) => (
                 <button
-                  className={selectedTask?.id === task.id ? 'workspace-menu-row selected' : 'workspace-menu-row'}
-                  key={task.id}
-                  onClick={() => chooseWorkspace(task.id)}
+                  className={selectedSession?.id === session.id ? 'workspace-menu-row selected' : 'workspace-menu-row'}
+                  key={session.id}
+                  onClick={() => chooseWorkspace(session.id)}
                   type="button"
                 >
-                  <StatusPill compact status={task.status} />
+                  <StatusPill compact status={session.status} />
                   <span className="workspace-row-copy">
-                    <strong>{task.title}</strong>
-                    <small>{task.branch} · {STATUS_LABELS[task.status]}</small>
+                    <strong>{session.title}</strong>
+                    <small>{session.branch} · {STATUS_LABELS[session.status]}</small>
                   </span>
-                  {selectedTask?.id === task.id ? <Check size={15} /> : null}
+                  {selectedSession?.id === session.id ? <Check size={15} /> : null}
                 </button>
               ))}
             </div>
 
-            {completedTasks.length > 0 ? (
+            {completedSessions.length > 0 ? (
               <>
                 <div className="popover-title workspace-section-title">Recently completed</div>
                 <div className="repository-menu-list workspace-menu-list completed-worktree-list">
-                  {completedTasks.map((task) => (
-                    <button className="workspace-menu-row" key={task.id} onClick={() => chooseWorkspace(task.id)} type="button">
-                      <StatusPill compact status={task.status} />
-                      <span className="workspace-row-copy"><strong>{task.title}</strong><small>{task.commit ?? task.branch}</small></span>
+                  {completedSessions.map((session) => (
+                    <button className="workspace-menu-row" key={session.id} onClick={() => chooseWorkspace(session.id)} type="button">
+                      <StatusPill compact status={session.status} />
+                      <span className="workspace-row-copy"><strong>{session.title}</strong><small>{session.commit ?? session.branch}</small></span>
                     </button>
                   ))}
                 </div>
@@ -215,14 +215,14 @@ export function RepositoryBar({ project, selectedTask }: { project: Project; sel
         <button
           aria-expanded={openMenu === 'branch'}
           className={openMenu === 'branch' ? 'repository-control branch-control active' : 'repository-control branch-control'}
-          disabled={Boolean(selectedTask)}
+          disabled={Boolean(selectedSession)}
           onClick={() => setOpenMenu((current) => current === 'branch' ? null : 'branch')}
-          title={selectedTask ? 'Task branches are managed with their isolated worktrees.' : undefined}
+          title={selectedSession ? 'Return to the main workspace to switch branches.' : undefined}
           type="button"
         >
           <span className="repository-control-icon branch"><GitBranch size={18} /></span>
           <span className="repository-control-copy">
-            <small>{selectedTask ? 'Task branch' : 'Current branch'}</small>
+            <small>{selectedSession ? 'Session branch' : 'Current branch'}</small>
             <strong>{displayedBranch}</strong>
           </span>
           <ChevronDown size={14} />
@@ -271,7 +271,7 @@ export function RepositoryBar({ project, selectedTask }: { project: Project; sel
                       type="button"
                     >
                       {branch.isCurrent ? <Check size={14} /> : <GitBranch size={14} />}
-                      <span><strong>{branch.name}</strong>{branch.isWorktree && !branch.isCurrent ? <small>Used by a task worktree</small> : null}</span>
+                      <span><strong>{branch.name}</strong>{branch.isWorktree && !branch.isCurrent ? <small>Used by a session worktree</small> : null}</span>
                       {branch.updatedAt ? <time>{formatBranchAge(branch.updatedAt)}</time> : null}
                     </button>
                   ))}

@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 import { BrowserWindow, dialog, ipcMain } from 'electron'
-import type { CreateTaskInput, Project, WorkspaceSnapshot } from '../shared/types'
+import type { CreateSessionInput, Project, WorkspaceSnapshot } from '../shared/types'
 import { CodexAdapter } from './services/agent'
 import { GitService } from './services/git-service'
 import { ProcessManager } from './services/process-manager'
 import { WorkspaceStore } from './services/store'
-import { TaskManager } from './services/task-manager'
+import { SessionManager } from './services/task-manager'
 
 export async function registerIpc(userDataPath: string): Promise<void> {
   const store = new WorkspaceStore(join(userDataPath, 'workspace.json'))
@@ -19,7 +19,7 @@ export async function registerIpc(userDataPath: string): Promise<void> {
       window.webContents.send('workspace:changed', snapshot)
     }
   }
-  const tasks = new TaskManager(
+  const sessions = new SessionManager(
     store,
     git,
     agent,
@@ -46,12 +46,12 @@ export async function registerIpc(userDataPath: string): Promise<void> {
     if (!project) throw new Error('That repository is no longer in the recent repository list.')
     return openRepository(project.path, store, git, broadcast)
   })
-  ipcMain.handle('workspace:getRepositoryStatus', (_event, taskId?: string) => {
+  ipcMain.handle('workspace:getRepositoryStatus', (_event, sessionId?: string) => {
     const project = requireProject(store)
-    if (!taskId) return git.getRepositoryStatus(project.path)
-    const task = store.getTask(taskId)
-    if (!task || task.projectId !== project.id) throw new Error('That task is not part of the current repository.')
-    return git.getRepositoryStatus(task.worktreePath)
+    if (!sessionId) return git.getRepositoryStatus(project.path)
+    const session = store.getSession(sessionId)
+    if (!session || session.projectId !== project.id) throw new Error('That session is not part of the current repository.')
+    return git.getRepositoryStatus(session.workspacePath)
   })
   ipcMain.handle('branches:list', () => {
     const project = requireProject(store)
@@ -67,15 +67,15 @@ export async function registerIpc(userDataPath: string): Promise<void> {
     await git.createBranch(project.path, name, baseBranch)
     return openRepository(project.path, store, git, broadcast)
   })
-  ipcMain.handle('tasks:create', (_event, input: CreateTaskInput) => tasks.create(input))
-  ipcMain.handle('tasks:get', (_event, taskId: string) => tasks.get(taskId))
-  ipcMain.handle('tasks:sendMessage', (_event, taskId: string, message: string) =>
-    tasks.sendMessage(taskId, message),
+  ipcMain.handle('sessions:create', (_event, input: CreateSessionInput) => sessions.create(input))
+  ipcMain.handle('sessions:get', (_event, sessionId: string) => sessions.get(sessionId))
+  ipcMain.handle('sessions:sendMessage', (_event, sessionId: string, message: string) =>
+    sessions.sendMessage(sessionId, message),
   )
-  ipcMain.handle('tasks:cancel', (_event, taskId: string) => tasks.cancel(taskId))
-  ipcMain.handle('tasks:runVerification', (_event, taskId: string) => tasks.runVerification(taskId))
-  ipcMain.handle('tasks:approve', (_event, taskId: string) => tasks.approve(taskId))
-  ipcMain.handle('tasks:getDiff', (_event, taskId: string, filePath?: string) => tasks.getDiff(taskId, filePath))
+  ipcMain.handle('sessions:stop', (_event, sessionId: string) => sessions.stop(sessionId))
+  ipcMain.handle('sessions:runVerification', (_event, sessionId: string) => sessions.runVerification(sessionId))
+  ipcMain.handle('sessions:commit', (_event, sessionId: string) => sessions.commit(sessionId))
+  ipcMain.handle('sessions:getDiff', (_event, sessionId: string, filePath?: string) => sessions.getDiff(sessionId, filePath))
 }
 
 function requireProject(store: WorkspaceStore): Project {

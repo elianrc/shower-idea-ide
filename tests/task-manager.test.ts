@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { makeTitle, slugify } from '../apps/desktop/src/main/services/task-manager'
 
-describe('task naming', () => {
+describe('session naming', () => {
   it('creates safe, bounded Git branch slugs', () => {
     expect(slugify('Add password reset!')).toBe('add-password-reset')
-    expect(slugify('   ')).toBe('task')
+    expect(slugify('   ')).toBe('session')
     expect(slugify('A'.repeat(100))).toHaveLength(36)
   })
 

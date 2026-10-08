@@ -1,7 +1,8 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import {
   AlertCircle,
   ArrowLeft,
+  Bot,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -9,30 +10,27 @@ import {
   FileCode2,
   GitBranch,
   GitCommitHorizontal,
-  MessageSquareText,
   Play,
   Send,
   Square,
   TerminalSquare,
+  UserRound,
   XCircle,
 } from 'lucide-react'
-import type { Task, VerificationResult } from '../../shared/types'
+import type { Session, SessionActivity, VerificationResult } from '../../shared/types'
 import { useAppStore } from '../store'
 import { StatusPill } from './StatusPill'
 
 const DiffViewer = lazy(() => import('./DiffViewer'))
-type DetailTab = 'overview' | 'activity' | 'changes'
+type DetailTab = 'conversation' | 'changes' | 'checks'
 
-export function TaskDetail({ task }: { task: Task }) {
-  const selectTask = useAppStore((state) => state.selectTask)
-  const [tab, setTab] = useState<DetailTab>('overview')
+export function SessionDetail({ session }: { session: Session }) {
+  const selectSession = useAppStore((state) => state.selectSession)
+  const [tab, setTab] = useState<DetailTab>('conversation')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const additions = task.changedFiles.reduce((sum, file) => sum + file.additions, 0)
-  const deletions = task.changedFiles.reduce((sum, file) => sum + file.deletions, 0)
-  const isRunning = ['planning', 'working', 'verifying', 'changes_requested'].includes(task.status)
-  const canReview = task.status === 'ready_for_review' || task.status === 'failed' || task.status === 'committed'
+  const isRunning = ['starting', 'running', 'verifying'].includes(session.status)
 
   const run = async (action: () => Promise<unknown>) => {
     setBusy(true)
@@ -48,112 +46,165 @@ export function TaskDetail({ task }: { task: Task }) {
 
   const sendMessage = async () => {
     const value = message.trim()
-    if (!value) return
-    await run(() => window.vivlio.tasks.sendMessage(task.id, value))
+    if (!value || isRunning) return
     setMessage('')
-    setTab('activity')
+    await run(() => window.vivlio.sessions.sendMessage(session.id, value))
   }
 
   return (
-    <div className="task-detail">
-      <header className="task-detail-header">
-        <button aria-label="Back to tasks" className="icon-button" onClick={() => selectTask(null)} type="button"><ArrowLeft size={18} /></button>
+    <div className="task-detail session-detail">
+      <header className="task-detail-header session-detail-header">
+        <button aria-label="Back to sessions" className="icon-button" onClick={() => selectSession(null)} type="button"><ArrowLeft size={18} /></button>
         <div className="task-title-block">
-          <h1>{task.title}</h1>
-          <div className="task-meta"><StatusPill status={task.status} /><span><GitBranch size={13} />{task.branch}</span></div>
+          <h1>{session.title}</h1>
+          <div className="task-meta">
+            <StatusPill status={session.status} />
+            <span><Bot size={13} />Codex</span>
+            <span><GitBranch size={13} />{session.branch}</span>
+            <span>{session.workspaceMode === 'worktree' ? 'Isolated worktree' : 'Current branch'}</span>
+          </div>
         </div>
         <div className="task-actions">
           {isRunning ? (
-            <button className="secondary-button danger" disabled={busy} onClick={() => void run(() => window.vivlio.tasks.cancel(task.id))} type="button">
+            <button className="secondary-button danger" disabled={busy} onClick={() => void run(() => window.vivlio.sessions.stop(session.id))} type="button">
               <Square size={13} /> Stop
             </button>
           ) : null}
-          {canReview && task.status !== 'committed' ? (
-            <button className="secondary-button" disabled={busy} onClick={() => void run(() => window.vivlio.tasks.runVerification(task.id))} type="button">
-              <Play size={14} /> Verify again
+          {!isRunning && session.status !== 'completed' ? (
+            <button className="secondary-button" disabled={busy} onClick={() => void run(() => window.vivlio.sessions.runVerification(session.id))} type="button">
+              <Play size={14} /> Run checks
             </button>
           ) : null}
-          {task.status === 'ready_for_review' ? (
-            <button className="primary-button" disabled={busy || task.changedFiles.length === 0} onClick={() => void run(() => window.vivlio.tasks.approve(task.id))} type="button">
-              <Check size={15} /> Approve & commit
+          {!isRunning && session.status !== 'completed' && session.changedFiles.length > 0 ? (
+            <button className="primary-button" disabled={busy} onClick={() => void run(() => window.vivlio.sessions.commit(session.id))} type="button">
+              <GitCommitHorizontal size={15} /> Commit changes
             </button>
           ) : null}
-          {task.status === 'committed' ? <span className="commit-badge"><GitCommitHorizontal size={15} />{task.commit}</span> : null}
+          {session.status === 'completed' ? <span className="commit-badge"><GitCommitHorizontal size={15} />{session.commit}</span> : null}
         </div>
       </header>
 
-      <nav aria-label="Task detail" className="detail-tabs">
-        {(['overview', 'activity', 'changes'] as const).map((item) => (
+      <nav aria-label="Session detail" className="detail-tabs">
+        {(['conversation', 'changes', 'checks'] as const).map((item) => (
           <button className={tab === item ? 'active' : ''} key={item} onClick={() => setTab(item)} type="button">
-            {item === 'overview' ? 'Review' : item === 'activity' ? 'Activity' : `Changes ${task.changedFiles.length ? `(${task.changedFiles.length})` : ''}`}
+            {item === 'conversation' ? 'Conversation' : item === 'changes' ? `Changes ${session.changedFiles.length ? `(${session.changedFiles.length})` : ''}` : 'Checks'}
           </button>
         ))}
       </nav>
 
-      {error || task.error ? <div className="task-error"><AlertCircle size={16} /><span>{error ?? task.error}</span></div> : null}
+      {error || session.error ? <div className="task-error"><AlertCircle size={16} /><span>{error ?? session.error}</span></div> : null}
 
       <div className={`detail-content detail-${tab}`}>
-        {tab === 'overview' ? <ReviewOverview additions={additions} deletions={deletions} task={task} /> : null}
-        {tab === 'activity' ? <ActivityView task={task} /> : null}
-        {tab === 'changes' ? (
-          <ChangesView task={task} />
-        ) : null}
+        {tab === 'conversation' ? <Conversation activity={session.activity} /> : null}
+        {tab === 'changes' ? <ChangesView session={session} /> : null}
+        {tab === 'checks' ? <ChecksView session={session} /> : null}
       </div>
 
-      {!isRunning && task.status !== 'committed' && task.status !== 'cancelled' ? (
-        <div className="follow-up-bar">
-          <MessageSquareText size={17} />
-          <input
-            aria-label="Ask about changes or request a correction"
+      {tab === 'conversation' && session.status !== 'completed' ? (
+        <div className="session-composer">
+          <textarea
+            aria-label="Message Codex"
+            disabled={isRunning || busy}
             onChange={(event) => setMessage(event.target.value)}
-            onKeyDown={(event) => { if (event.key === 'Enter') void sendMessage() }}
-            placeholder="Ask about the changes or request a correction…"
+            onKeyDown={(event) => {
+              if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') void sendMessage()
+            }}
+            placeholder={isRunning ? 'Codex is working…' : 'Message Codex…'}
+            rows={2}
             value={message}
           />
-          <button aria-label="Send" className="send-button" disabled={!message.trim() || busy} onClick={() => void sendMessage()} type="button"><Send size={15} /></button>
+          <div className="composer-footer">
+            <span>{isRunning ? 'Stop the current turn to send another message' : '⌘ Enter to send'}</span>
+            <button aria-label="Send message" className="send-button" disabled={!message.trim() || isRunning || busy} onClick={() => void sendMessage()} type="button"><Send size={15} /></button>
+          </div>
         </div>
       ) : null}
     </div>
   )
 }
 
-function ReviewOverview({ task, additions, deletions }: { task: Task; additions: number; deletions: number }) {
+function Conversation({ activity }: { activity: SessionActivity[] }) {
+  const endRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: 'end' })
+  }, [activity.length])
+
   return (
-    <div className="review-overview">
+    <div className="conversation-view">
+      <div className="conversation-stream">
+        {activity.length === 0 ? <p className="panel-empty">Waiting for the session to begin…</p> : null}
+        {activity.map((entry) => <ConversationEntry entry={entry} key={entry.id} />)}
+        <div ref={endRef} />
+      </div>
+    </div>
+  )
+}
+
+function ConversationEntry({ entry }: { entry: SessionActivity }) {
+  if (entry.kind === 'message' || entry.kind === 'thought') {
+    const isUser = entry.kind === 'message'
+    return (
+      <article className={isUser ? 'conversation-message user-message' : 'conversation-message agent-message'}>
+        <div className="message-author">
+          {isUser ? <UserRound size={14} /> : <Bot size={14} />}
+          <strong>{isUser ? 'You' : 'Codex'}</strong>
+          <time>{formatTime(entry.createdAt)}</time>
+        </div>
+        <p>{entry.text}</p>
+      </article>
+    )
+  }
+
+  if (entry.kind === 'command' || entry.kind === 'output') {
+    return (
+      <details className="conversation-tool" open={entry.kind === 'command'}>
+        <summary><TerminalSquare size={13} /><span>{entry.kind === 'command' ? 'Command' : 'Output'}</span><time>{formatTime(entry.createdAt)}</time><ChevronDown size={13} /></summary>
+        <pre>{entry.text}</pre>
+      </details>
+    )
+  }
+
+  return (
+    <div className={`conversation-event event-${entry.kind}`}>
+      {entry.kind === 'error' ? <AlertCircle size={13} /> : <Check size={13} />}
+      <span>{entry.text}</span><time>{formatTime(entry.createdAt)}</time>
+    </div>
+  )
+}
+
+function ChecksView({ session }: { session: Session }) {
+  const additions = session.changedFiles.reduce((sum, file) => sum + file.additions, 0)
+  const deletions = session.changedFiles.reduce((sum, file) => sum + file.deletions, 0)
+  return (
+    <div className="review-overview checks-view">
       <section className="review-hero">
-        <p className="eyebrow">Implementation summary</p>
-        <h2>{task.summary || liveSummary(task)}</h2>
-        <p className="original-request">“{task.prompt.split('\n\nFollow-up request:')[0]}”</p>
+        <p className="eyebrow">Session workspace</p>
+        <h2>{session.summary || 'Changes and checks stay attached to this conversation.'}</h2>
         <div className="change-totals">
-          <span><FileCode2 size={15} /> {task.changedFiles.length} changed {task.changedFiles.length === 1 ? 'file' : 'files'}</span>
+          <span><FileCode2 size={15} /> {session.changedFiles.length} changed {session.changedFiles.length === 1 ? 'file' : 'files'}</span>
           <span className="diff-add">+{additions}</span>
           <span className="diff-remove">−{deletions}</span>
         </div>
       </section>
-
       <div className="review-columns">
         <section className="review-panel">
-          <div className="panel-heading"><h3>Files changed</h3><span>{task.changedFiles.length}</span></div>
-          {task.changedFiles.length === 0 ? <p className="panel-empty">Changes will appear as the agent works.</p> : (
+          <div className="panel-heading"><h3>Files changed</h3><span>{session.changedFiles.length}</span></div>
+          {session.changedFiles.length === 0 ? <p className="panel-empty">No files have changed in this session.</p> : (
             <div className="file-list">
-              {task.changedFiles.map((file) => (
+              {session.changedFiles.map((file) => (
                 <div className="file-row" key={file.path}>
                   <span className={`file-status file-${file.status}`}>{file.status.slice(0, 1).toUpperCase()}</span>
-                  <span className="file-path">{file.path}</span>
-                  <span className="diff-add">+{file.additions}</span>
-                  <span className="diff-remove">−{file.deletions}</span>
+                  <span className="file-path">{file.path}</span><span className="diff-add">+{file.additions}</span><span className="diff-remove">−{file.deletions}</span>
                 </div>
               ))}
             </div>
           )}
         </section>
-
         <section className="review-panel">
-          <div className="panel-heading"><h3>Verification</h3><span>{task.verification.length}</span></div>
-          {task.verification.length === 0 ? <p className="panel-empty">No project checks were detected.</p> : (
-            <div className="verification-list">
-              {task.verification.map((result) => <VerificationRow key={result.id} result={result} />)}
-            </div>
+          <div className="panel-heading"><h3>Checks</h3><span>{session.verification.length}</span></div>
+          {session.verification.length === 0 ? <p className="panel-empty">Run checks when you want validation.</p> : (
+            <div className="verification-list">{session.verification.map((result) => <VerificationRow key={result.id} result={result} />)}</div>
           )}
         </section>
       </div>
@@ -165,72 +216,34 @@ function VerificationRow({ result }: { result: VerificationResult }) {
   const Icon = result.status === 'passed' ? CheckCircle2 : result.status === 'failed' ? XCircle : Circle
   return (
     <details className={`verification-row verify-${result.status}`}>
-      <summary>
-        <Icon size={15} />
-        <code>{result.command}</code>
-        {result.durationMs ? <span>{(result.durationMs / 1000).toFixed(1)}s</span> : null}
-        {result.output ? <ChevronDown size={13} /> : null}
-      </summary>
+      <summary><Icon size={15} /><code>{result.command}</code>{result.durationMs ? <span>{(result.durationMs / 1000).toFixed(1)}s</span> : null}{result.output ? <ChevronDown size={13} /> : null}</summary>
       {result.output ? <pre>{result.output}</pre> : null}
     </details>
   )
 }
 
-function ActivityView({ task }: { task: Task }) {
-  return (
-    <div className="activity-view">
-      <div className="activity-heading">
-        <div><p className="eyebrow">Agent session</p><h2>Meaningful progress, as it happens.</h2></div>
-        <span>{task.activity.length} events</span>
-      </div>
-      <div className="activity-stream">
-        {task.activity.length === 0 ? <p className="panel-empty">Waiting for the agent to begin…</p> : null}
-        {task.activity.map((entry, index) => (
-          <div className={`activity-entry activity-${entry.kind}`} key={entry.id}>
-            <span className="activity-rail"><span />{index < task.activity.length - 1 ? <i /> : null}</span>
-            <div className="activity-body">
-              <div className="activity-meta">
-                {entry.kind === 'command' ? <TerminalSquare size={13} /> : entry.kind === 'error' ? <AlertCircle size={13} /> : <Check size={13} />}
-                <span>{entry.kind}</span>
-                <time>{new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
-              </div>
-              <p>{entry.text}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function ChangesView({ task }: { task: Task }) {
+function ChangesView({ session }: { session: Session }) {
   const [selected, setSelected] = useState<string | null>(null)
   return (
     <div className="changes-layout">
       <aside className="changed-files-pane">
-        <div className="changed-files-heading">Changed files <span>{task.changedFiles.length}</span></div>
-        <button className={!selected ? 'changed-file active' : 'changed-file'} onClick={() => setSelected(null)} type="button">
-          <FileCode2 size={14} /><span>All changes</span>
-        </button>
-        {task.changedFiles.map((file) => (
+        <div className="changed-files-heading">Changed files <span>{session.changedFiles.length}</span></div>
+        <button className={!selected ? 'changed-file active' : 'changed-file'} onClick={() => setSelected(null)} type="button"><FileCode2 size={14} /><span>All changes</span></button>
+        {session.changedFiles.map((file) => (
           <button className={selected === file.path ? 'changed-file active' : 'changed-file'} key={file.path} onClick={() => setSelected(file.path)} type="button">
-            <span className={`file-status file-${file.status}`}>{file.status.slice(0, 1).toUpperCase()}</span>
-            <span>{file.path}</span>
+            <span className={`file-status file-${file.status}`}>{file.status.slice(0, 1).toUpperCase()}</span><span>{file.path}</span>
           </button>
         ))}
       </aside>
       <section className="raw-diff-pane">
         <Suspense fallback={<div className="loading-row">Loading code viewer…</div>}>
-          <DiffViewer filePath={selected ?? undefined} taskId={task.id} />
+          <DiffViewer filePath={selected ?? undefined} sessionId={session.id} />
         </Suspense>
       </section>
     </div>
   )
 }
 
-function liveSummary(task: Task): string {
-  if (task.status === 'working') return 'The agent is implementing your request.'
-  if (task.status === 'verifying') return 'Implementation complete. Verification is running.'
-  if (task.status === 'failed') return 'The task needs your attention before it can continue.'
-  return 'Preparing an isolated workspace for this task.'
+function formatTime(value: string): string {
+  return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }

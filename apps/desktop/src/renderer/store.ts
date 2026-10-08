@@ -1,27 +1,27 @@
 import { create } from 'zustand'
-import type { BranchInfo, CreateTaskInput, RepositoryStatus, Task, WorkspaceSnapshot } from '../shared/types'
+import type { BranchInfo, CreateSessionInput, RepositoryStatus, Session, WorkspaceSnapshot } from '../shared/types'
 
-type View = 'tasks' | 'changes' | 'history' | 'code'
+type View = 'sessions' | 'changes' | 'history' | 'code'
 
 interface AppState extends WorkspaceSnapshot {
   isLoading: boolean
   error: string | null
-  selectedTaskId: string | null
+  selectedSessionId: string | null
   view: View
-  isNewTaskOpen: boolean
+  isNewSessionOpen: boolean
   branches: BranchInfo[]
   repositoryStatus: RepositoryStatus | null
   initialize(): Promise<() => void>
   openRepository(): Promise<void>
   selectRepository(projectId: string): Promise<void>
   refreshBranches(): Promise<void>
-  refreshRepositoryStatus(taskId?: string): Promise<void>
+  refreshRepositoryStatus(sessionId?: string): Promise<void>
   switchBranch(name: string): Promise<boolean>
   createBranch(name: string, baseBranch?: string): Promise<boolean>
-  createTask(input: CreateTaskInput): Promise<Task | null>
-  selectTask(taskId: string | null): void
+  createSession(input: CreateSessionInput): Promise<Session | null>
+  selectSession(sessionId: string | null): void
   setView(view: View): void
-  setNewTaskOpen(open: boolean): void
+  setNewSessionOpen(open: boolean): void
   clearError(): void
 }
 
@@ -32,12 +32,12 @@ function errorMessage(error: unknown): string {
 export const useAppStore = create<AppState>((set, get) => ({
   project: null,
   projects: [],
-  tasks: [],
+  sessions: [],
   isLoading: true,
   error: null,
-  selectedTaskId: null,
-  view: 'tasks',
-  isNewTaskOpen: false,
+  selectedSessionId: null,
+  view: 'sessions',
+  isNewSessionOpen: false,
   branches: [],
   repositoryStatus: null,
 
@@ -55,11 +55,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({ error: errorMessage(error), isLoading: false })
     }
     return window.vivlio.events.onWorkspaceChanged((snapshot) => {
-      const selectedTaskId = get().selectedTaskId
+      const selectedSessionId = get().selectedSessionId
       set({
         ...snapshot,
-        selectedTaskId: selectedTaskId && snapshot.tasks.some((task) => task.id === selectedTaskId)
-          ? selectedTaskId
+        selectedSessionId: selectedSessionId && snapshot.sessions.some((session) => session.id === selectedSessionId)
+          ? selectedSessionId
           : null,
       })
     })
@@ -75,7 +75,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             window.vivlio.workspace.getRepositoryStatus(),
           ])
         : [[], null]
-      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedTaskId: null, view: 'tasks' })
+      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedSessionId: null, view: 'sessions' })
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
     }
@@ -90,7 +90,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         window.vivlio.branches.list(),
         window.vivlio.workspace.getRepositoryStatus(),
       ])
-      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedTaskId: null, view: 'tasks' })
+      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedSessionId: null, view: 'sessions' })
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
     }
@@ -105,10 +105,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  async refreshRepositoryStatus(taskId) {
+  async refreshRepositoryStatus(sessionId) {
     if (!get().project) return
     try {
-      set({ repositoryStatus: await window.vivlio.workspace.getRepositoryStatus(taskId) })
+      set({ repositoryStatus: await window.vivlio.workspace.getRepositoryStatus(sessionId) })
     } catch {
       set({ repositoryStatus: null })
     }
@@ -122,7 +122,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         window.vivlio.branches.list(),
         window.vivlio.workspace.getRepositoryStatus(),
       ])
-      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedTaskId: null, view: 'tasks' })
+      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedSessionId: null, view: 'sessions' })
       return true
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
@@ -138,7 +138,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         window.vivlio.branches.list(),
         window.vivlio.workspace.getRepositoryStatus(),
       ])
-      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedTaskId: null, view: 'tasks' })
+      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedSessionId: null, view: 'sessions' })
       return true
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
@@ -146,26 +146,26 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  async createTask(input) {
+  async createSession(input) {
     set({ isLoading: true, error: null })
     try {
-      const task = await window.vivlio.tasks.create(input)
-      set({ isLoading: false, isNewTaskOpen: false, selectedTaskId: task.id })
-      return task
+      const session = await window.vivlio.sessions.create(input)
+      set({ isLoading: false, isNewSessionOpen: false, selectedSessionId: session.id })
+      return session
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
       return null
     }
   },
 
-  selectTask(selectedTaskId) {
-    set({ selectedTaskId })
-    void get().refreshRepositoryStatus(selectedTaskId ?? undefined)
+  selectSession(selectedSessionId) {
+    set({ selectedSessionId })
+    void get().refreshRepositoryStatus(selectedSessionId ?? undefined)
   },
   setView(view) {
-    set({ view, selectedTaskId: null })
+    set({ view, selectedSessionId: null })
     void get().refreshRepositoryStatus()
   },
-  setNewTaskOpen: (isNewTaskOpen) => set({ isNewTaskOpen }),
+  setNewSessionOpen: (isNewSessionOpen) => set({ isNewSessionOpen }),
   clearError: () => set({ error: null }),
 }))

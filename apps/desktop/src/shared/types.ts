@@ -1,17 +1,15 @@
-export type TaskStatus =
-  | 'draft'
-  | 'planning'
-  | 'working'
+export type SessionStatus =
+  | 'starting'
+  | 'running'
+  | 'waiting'
   | 'verifying'
-  | 'ready_for_review'
-  | 'changes_requested'
-  | 'approved'
-  | 'committed'
+  | 'completed'
+  | 'stopped'
   | 'failed'
-  | 'cancelled'
-  | 'blocked'
 
 export type ActivityKind = 'thought' | 'command' | 'output' | 'milestone' | 'error' | 'message'
+export type AgentProvider = 'codex'
+export type WorkspaceMode = 'current-branch' | 'worktree'
 
 export interface Project {
   id: string
@@ -41,9 +39,9 @@ export interface RepositoryStatus {
   behind: number
 }
 
-export interface TaskActivity {
+export interface SessionActivity {
   id: string
-  taskId: string
+  sessionId: string
   kind: ActivityKind
   text: string
   createdAt: string
@@ -64,15 +62,17 @@ export interface VerificationResult {
   durationMs?: number
 }
 
-export interface Task {
+export interface Session {
   id: string
   projectId: string
   title: string
-  prompt: string
-  status: TaskStatus
+  initialPrompt: string
+  status: SessionStatus
   branch: string
-  worktreePath: string
-  agent: 'codex'
+  workspacePath: string
+  workspaceMode: WorkspaceMode
+  agent: AgentProvider
+  providerSessionId?: string
   permission: 'review-only' | 'standard' | 'autonomous'
   summary: string
   createdAt: string
@@ -82,23 +82,25 @@ export interface Task {
   error?: string
   changedFiles: ChangedFile[]
   verification: VerificationResult[]
-  activity: TaskActivity[]
+  activity: SessionActivity[]
 }
 
 export interface WorkspaceSnapshot {
   project: Project | null
   projects: Project[]
-  tasks: Task[]
+  sessions: Session[]
 }
 
-export interface CreateTaskInput {
+export interface CreateSessionInput {
   prompt: string
-  permission: Task['permission']
+  agent: AgentProvider
+  permission: Session['permission']
+  workspaceMode: WorkspaceMode
   verificationCommands?: string[]
 }
 
-export interface TaskDiff {
-  taskId: string
+export interface SessionDiff {
+  sessionId: string
   raw: string
   files: ChangedFile[]
 }
@@ -109,37 +111,33 @@ export interface AppApi {
     openRepository(): Promise<WorkspaceSnapshot>
     openRepositoryAt(path: string): Promise<WorkspaceSnapshot>
     selectRepository(projectId: string): Promise<WorkspaceSnapshot>
-    getRepositoryStatus(taskId?: string): Promise<RepositoryStatus>
+    getRepositoryStatus(sessionId?: string): Promise<RepositoryStatus>
   }
   branches: {
     list(): Promise<BranchInfo[]>
     switch(name: string): Promise<WorkspaceSnapshot>
     create(name: string, baseBranch?: string): Promise<WorkspaceSnapshot>
   }
-  tasks: {
-    create(input: CreateTaskInput): Promise<Task>
-    get(taskId: string): Promise<Task | null>
-    sendMessage(taskId: string, message: string): Promise<Task>
-    cancel(taskId: string): Promise<Task>
-    runVerification(taskId: string): Promise<Task>
-    approve(taskId: string): Promise<Task>
-    getDiff(taskId: string, filePath?: string): Promise<TaskDiff>
+  sessions: {
+    create(input: CreateSessionInput): Promise<Session>
+    get(sessionId: string): Promise<Session | null>
+    sendMessage(sessionId: string, message: string): Promise<Session>
+    stop(sessionId: string): Promise<Session>
+    runVerification(sessionId: string): Promise<Session>
+    commit(sessionId: string): Promise<Session>
+    getDiff(sessionId: string, filePath?: string): Promise<SessionDiff>
   }
   events: {
     onWorkspaceChanged(callback: (snapshot: WorkspaceSnapshot) => void): () => void
   }
 }
 
-export const STATUS_LABELS: Record<TaskStatus, string> = {
-  draft: 'Draft',
-  planning: 'Planning',
-  working: 'Working',
-  verifying: 'Verifying',
-  ready_for_review: 'Ready for review',
-  changes_requested: 'Changes requested',
-  approved: 'Approved',
-  committed: 'Committed',
+export const STATUS_LABELS: Record<SessionStatus, string> = {
+  starting: 'Starting',
+  running: 'Running',
+  waiting: 'Ready',
+  verifying: 'Checking',
+  completed: 'Committed',
+  stopped: 'Stopped',
   failed: 'Needs attention',
-  cancelled: 'Cancelled',
-  blocked: 'Blocked',
 }

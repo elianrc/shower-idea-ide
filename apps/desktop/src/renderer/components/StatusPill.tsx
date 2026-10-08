@@ -1,14 +1,14 @@
 import { Check, CircleAlert, CircleDashed, LoaderCircle, X } from 'lucide-react'
-import { STATUS_LABELS, type TaskStatus } from '../../shared/types'
+import { STATUS_LABELS, type SessionStatus } from '../../shared/types'
 
-const workingStatuses = new Set<TaskStatus>(['planning', 'working', 'verifying', 'changes_requested'])
+const workingStatuses = new Set<SessionStatus>(['starting', 'running', 'verifying'])
 
-export function StatusPill({ status, compact = false }: { status: TaskStatus; compact?: boolean }) {
-  const Icon = status === 'committed' || status === 'approved'
+export function StatusPill({ status, compact = false }: { status: SessionStatus; compact?: boolean }) {
+  const Icon = status === 'completed'
     ? Check
-    : status === 'failed' || status === 'blocked'
+    : status === 'failed'
       ? CircleAlert
-      : status === 'cancelled'
+      : status === 'stopped'
         ? X
         : workingStatuses.has(status)
           ? LoaderCircle

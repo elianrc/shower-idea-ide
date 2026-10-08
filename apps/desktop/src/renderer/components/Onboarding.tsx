@@ -7,11 +7,11 @@ export function Onboarding({ onOpen, isLoading }: { onOpen(): void; isLoading: b
       <div className="onboarding-window-drag" />
       <section className="onboarding-card">
         <div className="onboarding-brand"><BrandMark size={38} /></div>
-        <p className="eyebrow">Agent-first development</p>
-        <h1>Turn intent into<br />reviewable software.</h1>
+        <p className="eyebrow">Local agent workspace</p>
+        <h1>Your repositories.<br />Your coding agents.</h1>
         <p className="onboarding-lede">
-          Give an agent a task. Follow meaningful progress. Verify the result, inspect every change,
-          and approve when it is ready.
+          Open a repository, start a local coding-agent session, and keep the conversation, Git context,
+          and every change together.
         </p>
         <button className="primary-button large" disabled={isLoading} onClick={onOpen} type="button">
           <FolderGit2 size={18} />
@@ -19,12 +19,12 @@ export function Onboarding({ onOpen, isLoading }: { onOpen(): void; isLoading: b
           <ArrowRight className="button-trailing" size={17} />
         </button>
         <div className="onboarding-features">
-          <span><Sparkles size={14} /> Agent-led</span>
-          <span><GitBranch size={14} /> Git-isolated</span>
-          <span><ShieldCheck size={14} /> Human-approved</span>
+          <span><Sparkles size={14} /> Persistent sessions</span>
+          <span><GitBranch size={14} /> Branch-aware</span>
+          <span><ShieldCheck size={14} /> Local CLI agents</span>
         </div>
       </section>
-      <p className="onboarding-note">Your code and task history stay on this machine.</p>
+      <p className="onboarding-note">Your code and session history stay on this machine.</p>
     </main>
   )
 }

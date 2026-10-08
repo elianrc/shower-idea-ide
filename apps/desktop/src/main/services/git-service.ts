@@ -1,6 +1,6 @@
 import { access, readFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
-import type { BranchInfo, ChangedFile, Project, RepositoryStatus, TaskDiff } from '../../shared/types'
+import type { BranchInfo, ChangedFile, Project, RepositoryStatus, SessionDiff } from '../../shared/types'
 import { ProcessManager } from './process-manager'
 
 const STATUS_MAP: Record<string, ChangedFile['status']> = {
@@ -112,7 +112,7 @@ export class GitService {
     const candidate = (await this.listBranches(repo)).find((item) => item.name === branch)
     if (!candidate) throw new Error(`Branch “${branch}” does not exist in this repository.`)
     if (candidate.isWorktree) {
-      throw new Error(`Branch “${branch}” is already checked out in another task worktree.`)
+      throw new Error(`Branch “${branch}” is already checked out in another session worktree.`)
     }
     const result = await this.git(repo, ['switch', branch], true)
     if (result.code !== 0) throw new Error(result.stderr.trim() || `Unable to switch to ${branch}.`)
@@ -178,7 +178,7 @@ export class GitService {
     return files
   }
 
-  async getDiff(taskId: string, repo: string, requestedPath?: string): Promise<TaskDiff> {
+  async getDiff(sessionId: string, repo: string, requestedPath?: string): Promise<SessionDiff> {
     const files = await this.getChangedFiles(repo)
     const filePath = requestedPath && files.some((file) => file.path === requestedPath)
       ? requestedPath
@@ -201,14 +201,14 @@ export class GitService {
         // The file may have disappeared while status was being collected.
       }
     }
-    return { taskId, raw: chunks.filter(Boolean).join('\n'), files }
+    return { sessionId, raw: chunks.filter(Boolean).join('\n'), files }
   }
 
   async commit(repo: string, message: string): Promise<string> {
     const add = await this.git(repo, ['add', '-A'], true)
-    if (add.code !== 0) throw new Error(add.stderr.trim() || 'Unable to stage task changes.')
+    if (add.code !== 0) throw new Error(add.stderr.trim() || 'Unable to stage session changes.')
     const commit = await this.git(repo, ['commit', '-m', message], true)
-    if (commit.code !== 0) throw new Error(commit.stderr.trim() || 'Unable to commit task changes.')
+    if (commit.code !== 0) throw new Error(commit.stderr.trim() || 'Unable to commit session changes.')
     const revision = await this.git(repo, ['rev-parse', '--short', 'HEAD'])
     return revision.stdout.trim()
   }

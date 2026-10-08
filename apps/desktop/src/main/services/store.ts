@@ -1,21 +1,43 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
-import type { Project, Task, WorkspaceSnapshot } from '../../shared/types'
+import type { Project, Session, SessionStatus, WorkspaceSnapshot } from '../../shared/types'
 
 interface PersistedState {
-  version: 2
+  version: 3
   activeProjectId: string | null
   projects: Project[]
-  tasks: Task[]
+  sessions: Session[]
+}
+
+interface LegacyTask {
+  id: string
+  projectId: string
+  title: string
+  prompt: string
+  status: string
+  branch: string
+  worktreePath: string
+  permission: Session['permission']
+  summary: string
+  createdAt: string
+  updatedAt: string
+  completedAt?: string
+  commit?: string
+  error?: string
+  changedFiles: Session['changedFiles']
+  verification: Session['verification']
+  activity: Array<Omit<Session['activity'][number], 'sessionId'> & { taskId?: string }>
 }
 
 interface LegacyPersistedState {
-  version: 1
-  project: Project | null
-  tasks: Task[]
+  version: 1 | 2
+  activeProjectId?: string | null
+  project?: Project | null
+  projects?: Project[]
+  tasks: LegacyTask[]
 }
 
-const EMPTY_STATE: PersistedState = { version: 2, activeProjectId: null, projects: [], tasks: [] }
+const EMPTY_STATE: PersistedState = { version: 3, activeProjectId: null, projects: [], sessions: [] }
 
 export class WorkspaceStore {
   private state: PersistedState = structuredClone(EMPTY_STATE)
@@ -27,17 +49,21 @@ export class WorkspaceStore {
     try {
       const contents = await readFile(this.filePath, 'utf8')
       const parsed = JSON.parse(contents) as PersistedState | LegacyPersistedState
-      if (parsed.version === 2) {
+      if (parsed.version === 3) {
         this.state = parsed
-      } else if (parsed.version === 1) {
-        this.state = {
-          version: 2,
-          activeProjectId: parsed.project?.id ?? null,
-          projects: parsed.project ? [parsed.project] : [],
-          tasks: parsed.tasks,
-        }
-        await this.persist()
+        return
       }
+
+      const projects = parsed.version === 1
+        ? parsed.project ? [parsed.project] : []
+        : parsed.projects ?? []
+      this.state = {
+        version: 3,
+        activeProjectId: parsed.version === 1 ? parsed.project?.id ?? null : parsed.activeProjectId ?? null,
+        projects,
+        sessions: parsed.tasks.map(migrateTask),
+      }
+      await this.persist()
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code
       if (code !== 'ENOENT') console.warn('Unable to load workspace state:', error)
@@ -49,7 +75,7 @@ export class WorkspaceStore {
     const projects = [...this.state.projects].sort(
       (left, right) => new Date(right.openedAt).getTime() - new Date(left.openedAt).getTime(),
     )
-    return structuredClone({ project, projects, tasks: this.state.tasks })
+    return structuredClone({ project, projects, sessions: this.state.sessions })
   }
 
   getProject(): Project | null {
@@ -60,8 +86,8 @@ export class WorkspaceStore {
     return this.state.projects.find((project) => project.id === projectId) ?? null
   }
 
-  getTask(taskId: string): Task | undefined {
-    return this.state.tasks.find((task) => task.id === taskId)
+  getSession(sessionId: string): Session | undefined {
+    return this.state.sessions.find((session) => session.id === sessionId)
   }
 
   async setProject(project: Project): Promise<void> {
@@ -75,18 +101,18 @@ export class WorkspaceStore {
     await this.persist()
   }
 
-  async addTask(task: Task): Promise<void> {
-    this.state.tasks.unshift(task)
+  async addSession(session: Session): Promise<void> {
+    this.state.sessions.unshift(session)
     await this.persist()
   }
 
-  async updateTask(taskId: string, update: (task: Task) => void): Promise<Task> {
-    const task = this.getTask(taskId)
-    if (!task) throw new Error(`Task ${taskId} was not found.`)
-    update(task)
-    task.updatedAt = new Date().toISOString()
+  async updateSession(sessionId: string, update: (session: Session) => void): Promise<Session> {
+    const session = this.getSession(sessionId)
+    if (!session) throw new Error(`Session ${sessionId} was not found.`)
+    update(session)
+    session.updatedAt = new Date().toISOString()
     await this.persist()
-    return structuredClone(task)
+    return structuredClone(session)
   }
 
   private async persist(): Promise<void> {
@@ -98,4 +124,35 @@ export class WorkspaceStore {
     })
     await this.persistQueue
   }
+}
+
+function migrateTask(task: LegacyTask): Session {
+  return {
+    id: task.id,
+    projectId: task.projectId,
+    title: task.title,
+    initialPrompt: task.prompt,
+    status: migrateStatus(task.status),
+    branch: task.branch,
+    workspacePath: task.worktreePath,
+    workspaceMode: 'worktree',
+    agent: 'codex',
+    permission: task.permission,
+    summary: task.summary,
+    createdAt: task.createdAt,
+    updatedAt: task.updatedAt,
+    completedAt: task.completedAt,
+    commit: task.commit,
+    error: task.error,
+    changedFiles: task.changedFiles,
+    verification: task.verification,
+    activity: task.activity.map(({ taskId: _taskId, ...entry }) => ({ ...entry, sessionId: task.id })),
+  }
+}
+
+function migrateStatus(status: string): SessionStatus {
+  if (status === 'committed' || status === 'approved') return 'completed'
+  if (status === 'ready_for_review') return 'waiting'
+  if (status === 'failed' || status === 'blocked') return 'failed'
+  return 'stopped'
 }
