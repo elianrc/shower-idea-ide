@@ -1,22 +1,22 @@
 # Vivlio
 
-Vivlio is an agent-first desktop development environment. Work begins with an intent, runs in an isolated Git worktree, passes through verification and review, and only becomes a commit after explicit human approval.
+Vivlio is a repository-centered desktop workspace for local coding agents. It combines GitHub Desktop-style repository and branch controls with persistent Codex sessions that can run directly on the current branch or in an isolated worktree.
 
-The product and architecture source of truth is [docs/product-architecture-spec.md](docs/product-architecture-spec.md).
+The current direction is captured in [docs/session-first-prototype.md](docs/session-first-prototype.md). The original architecture remains in [docs/product-architecture-spec.md](docs/product-architecture-spec.md).
 
-## Implemented v0.1 workflow
+## Implemented session workflow
 
 - Open and inspect a local Git repository.
-- Create a task from a natural-language request.
-- Create a dedicated `task/*` branch and Git worktree.
-- Launch Codex in the isolated worktree through an adapter interface.
-- Stream meaningful activity into the task view.
+- Start a Codex session from a natural-language message.
+- Use the current branch or create a dedicated `session/*` worktree.
+- Persist and resume the native Codex CLI thread for follow-up messages.
+- Stream conversation, commands, and output into the session view.
 - Detect changed files and line statistics.
 - Render the raw Git diff in Monaco.
 - Infer and run `lint`, `typecheck`, `test`, and `build` package scripts.
-- Ask follow-up questions or request corrections in the same task.
-- Approve the result and create a Git commit.
-- Persist project, task, conversation, review, and verification metadata locally.
+- Run project checks on demand.
+- Continue the conversation or create a Git commit from the same session.
+- Persist repositories, sessions, conversations, changes, and verification metadata locally.
 
 ## Development
 
@@ -49,10 +49,10 @@ Once it opens, right-click its Dock icon and choose **Options > Keep in Dock**.
 Re-run the same command whenever you want to replace the installed app with a
 new local build.
 
-Task metadata is stored in Electron's application data directory. Task worktrees are stored alongside that metadata rather than inside the opened repository.
+Session metadata is stored in Electron's application data directory. Isolated session worktrees are stored alongside that metadata rather than inside the opened repository.
 
 ## Architecture
 
-The renderer has no direct access to Node.js. A narrow preload API connects it to the Electron main process, where the task manager coordinates persistence, Git, processes, the Codex adapter, and verification. This preserves the specification's key boundary: the UI owns presentation and decisions while the core engine owns development operations.
+The renderer has no direct access to Node.js. A narrow preload API connects it to the Electron main process, where the session manager coordinates persistence, Git, processes, the Codex adapter, and verification. This preserves the specification's key boundary: the UI owns presentation and decisions while the core engine owns development operations.
 
-Local JSON is used for the first persistence vertical slice. The store is deliberately isolated behind `WorkspaceStore` so it can be migrated to the specification's SQLite and Drizzle design without changing the renderer or task workflow.
+Local JSON is used for the first persistence vertical slice. The store is deliberately isolated behind `WorkspaceStore` so it can later move to SQLite without changing the renderer or session workflow.
