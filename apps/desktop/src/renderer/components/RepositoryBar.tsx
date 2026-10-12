@@ -2,11 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import {
   Check,
   ChevronDown,
-  CircleDot,
   FolderTree,
   FolderGit2,
   GitBranch,
-  GitFork,
   Plus,
   Search,
   Settings2,
@@ -59,10 +57,6 @@ export function RepositoryBar({ project, selectedSession }: { project: Project; 
   const activeSessions = projectSessions.filter((session) => session.status !== 'completed')
   const completedSessions = projectSessions.filter((session) => session.status === 'completed').slice(0, 3)
   const displayedBranch = selectedSession?.branch ?? repositoryStatus?.branch ?? project.branch
-  const isWorkspaceClean = repositoryStatus?.isClean ?? (!selectedSession && project.isClean)
-  const cleanlinessLabel = repositoryStatus
-    ? repositoryStatus.isClean ? 'No local changes' : 'Local changes'
-    : selectedSession ? 'Preparing workspace' : project.isClean ? 'No local changes' : 'Local changes'
 
   const chooseRepository = async (projectId: string) => {
     setOpenMenu(null)
@@ -284,21 +278,6 @@ export function RepositoryBar({ project, selectedSession }: { project: Project; 
       </div>
 
       <div className="repository-bar-spacer" />
-      <div className={isWorkspaceClean ? 'repository-state clean' : 'repository-state'}>
-        <CircleDot size={14} />
-        <span>{cleanlinessLabel}</span>
-      </div>
-      {repositoryStatus && (repositoryStatus.ahead > 0 || repositoryStatus.behind > 0) ? (
-        <div className="divergence-state" title="Commits compared with the upstream branch">
-          {repositoryStatus.ahead > 0 ? <span>↑ {repositoryStatus.ahead}</span> : null}
-          {repositoryStatus.behind > 0 ? <span>↓ {repositoryStatus.behind}</span> : null}
-        </div>
-      ) : null}
-      {repositoryStatus?.hasRemote || project.remote ? (
-        <div className="remote-state" title={repositoryStatus?.upstream ?? project.remote}>
-          <GitFork size={14} /><span>{repositoryStatus?.upstream ?? 'Not published'}</span>
-        </div>
-      ) : null}
       <button aria-label="Settings" className="toolbar-icon-button" type="button"><Settings2 size={17} /></button>
     </header>
   )

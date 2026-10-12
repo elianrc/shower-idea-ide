@@ -113,11 +113,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .repository-control.active > svg:last-child { transform: rotate(180deg); }
 .repository-bar-drag { width: 8px; flex: 0 0 8px; }
 .repository-bar-spacer { -webkit-app-region: drag; min-width: 12px; flex: 1; }
-.repository-state, .remote-state { -webkit-app-region: no-drag; display: flex; align-items: center; gap: 6px; padding: 0 10px; color: #6f7974; font-size: 9px; white-space: nowrap; }
-.repository-state > svg { color: var(--warning); }
-.repository-state.clean > svg { color: var(--accent); }
-.remote-state { max-width: 190px; padding-left: 12px; border-left: 1px solid #272d2a; color: #59625e; font-family: ui-monospace, monospace; }
-.remote-state span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .toolbar-icon-button { -webkit-app-region: no-drag; display: grid; width: 31px; height: 31px; margin: auto 13px auto 2px; place-items: center; border: 1px solid transparent; border-radius: 7px; color: #66706b; background: transparent; cursor: pointer; }
 .toolbar-icon-button:hover { border-color: #303734; color: #bbc3bf; background: #1a1f1d; }
 .repository-popover { position: absolute; top: 56px; left: 7px; z-index: 60; width: min(370px, calc(100vw - 28px)); overflow: hidden; border: 1px solid #343c38; border-radius: 10px; background: #151918; box-shadow: 0 20px 65px #000c, 0 2px 8px #0008; animation: repository-menu-in .13s ease-out; }
@@ -203,7 +198,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .workspace-row-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; }
 .workspace-row-copy strong { overflow: hidden; font-size: 10px; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
 .workspace-row-copy small { overflow: hidden; color: #59635e; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
-.divergence-state { -webkit-app-region: no-drag; display: flex; align-items: center; gap: 7px; padding: 0 10px; border-left: 1px solid #272d2a; color: #93a39b; font-family: ui-monospace, monospace; font-size: 9px; }
 .page { flex: 1; min-height: 0; overflow: auto; padding: 50px clamp(44px, 6vw, 88px); }
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; max-width: 1080px; margin: 0 auto 44px; }
 .eyebrow { margin: 0 0 8px; color: #718079; font-size: 9px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
@@ -312,8 +306,6 @@ h1, h2, h3 { font-family: 'Libron', Georgia, 'Times New Roman', serif; }
 .repository-control-icon, .repository-control-icon.branch, .repository-control-icon.workspace { border: 1px solid #292929; border-radius: 5px; color: #cfcfcf; background: #111; }
 .branch-control .repository-control-copy strong, .branch-menu-row strong { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 .repository-control.active .repository-control-icon { color: #fff; box-shadow: none; }
-.repository-state, .remote-state, .divergence-state { border-color: #242424; color: #777; }
-.repository-state > svg, .repository-state.clean > svg { color: #bdbdbd; }
 .toolbar-icon-button { border-radius: 5px; color: #777; }
 .toolbar-icon-button:hover { border-color: #333; color: #fff; background: #151515; }
 .repository-popover { border-color: #333; border-radius: 7px; background: #0c0c0c; box-shadow: 0 16px 40px #000; }
@@ -445,8 +437,6 @@ h1, h2, h3 { font-family: 'Libron', Georgia, 'Times New Roman', serif; }
   .repository-control { width: 190px; padding: 0 11px; }
   .repository-control.workspace-control { width: 220px; }
   .repository-control.branch-control { width: 180px; }
-  .repository-state span { display: none; }
-  .remote-state { max-width: 105px; }
   .review-columns { grid-template-columns: 1fr; }
   .task-grid { grid-template-columns: 1fr; }
 }
