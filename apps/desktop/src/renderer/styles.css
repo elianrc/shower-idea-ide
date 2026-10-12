@@ -62,7 +62,7 @@ button, input, textarea, select { font: inherit; }
 button { color: inherit; }
 button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 1px solid #fff; outline-offset: 2px; }
 
-.app-shell { display: grid; grid-template-columns: 236px minmax(0, 1fr); grid-template-rows: 42px 64px minmax(0, 1fr); height: 100%; background: var(--bg); }
+.app-shell { display: grid; grid-template-columns: 236px minmax(0, 1fr); grid-template-rows: 42px 52px minmax(0, 1fr); height: 100%; background: var(--bg); }
 .window-titlebar { -webkit-app-region: drag; grid-column: 1 / -1; grid-row: 1; border-bottom: 1px solid #202020; background: #0a0a0a; }
 .sidebar { position: relative; display: flex; min-width: 0; min-height: 0; flex-direction: column; grid-column: 1; grid-row: 3; border-right: 1px solid #1d2220; background: #0d1011; }
 .repository-bar, .repository-bar-drag { -webkit-app-region: drag; }
@@ -98,7 +98,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .workspace { display: flex; min-width: 0; min-height: 0; flex-direction: column; grid-column: 2; grid-row: 3; background: var(--bg); }
 .repository-bar { position: relative; z-index: 15; display: flex; min-width: 0; grid-column: 1 / -1; grid-row: 2; align-items: stretch; border-bottom: 1px solid #242a28; background: #101314e8; box-shadow: 0 1px #050706; backdrop-filter: blur(18px); }
 .repository-control-wrap, .repository-bar-actions { -webkit-app-region: no-drag; position: relative; }
-.repository-control { display: flex; width: 244px; height: 63px; align-items: center; gap: 11px; padding: 0 15px; border: 0; border-right: 1px solid #242a28; color: #dce2df; background: transparent; text-align: left; cursor: pointer; }
+.repository-control { display: flex; width: 244px; height: 51px; align-items: center; gap: 11px; padding: 0 15px; border: 0; border-right: 1px solid #242a28; color: #dce2df; background: transparent; text-align: left; cursor: pointer; }
 .repository-control:hover, .repository-control.active { background: #171b1a; }
 .repository-control:disabled { opacity: .82; cursor: default; }
 .repository-control:disabled:hover { background: transparent; }
@@ -114,7 +114,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .repository-bar-spacer { -webkit-app-region: drag; min-width: 12px; flex: 1; }
 .toolbar-icon-button { -webkit-app-region: no-drag; display: grid; width: 31px; height: 31px; margin: auto 13px auto 2px; place-items: center; border: 1px solid transparent; border-radius: 7px; color: #66706b; background: transparent; cursor: pointer; }
 .toolbar-icon-button:hover { border-color: #303734; color: #bbc3bf; background: #1a1f1d; }
-.repository-popover { position: absolute; top: 56px; left: 7px; z-index: 60; width: min(370px, calc(100vw - 28px)); overflow: hidden; border: 1px solid #343c38; border-radius: 10px; background: #151918; box-shadow: 0 20px 65px #000c, 0 2px 8px #0008; animation: repository-menu-in .13s ease-out; }
+.repository-popover { position: absolute; top: 46px; left: 7px; z-index: 60; width: min(370px, calc(100vw - 28px)); overflow: hidden; border: 1px solid #343c38; border-radius: 10px; background: #151918; box-shadow: 0 20px 65px #000c, 0 2px 8px #0008; animation: repository-menu-in .13s ease-out; }
 @keyframes repository-menu-in { from { opacity: 0; transform: translateY(-4px); } }
 .repository-popover-header { display: flex; align-items: center; justify-content: space-between; min-height: 43px; padding: 0 13px; border-bottom: 1px solid #282e2b; }
 .repository-popover-header strong { color: #cdd3d0; font-size: 11px; font-weight: 600; }
