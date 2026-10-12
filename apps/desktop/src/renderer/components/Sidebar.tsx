@@ -1,7 +1,6 @@
 import { Clock3, Code2, GitCompareArrows, MessagesSquare, Plus } from 'lucide-react'
 import type { Project, Session } from '../../shared/types'
 import { useAppStore } from '../store'
-import { BrandMark } from './BrandMark'
 import { StatusPill } from './StatusPill'
 
 const navigation = [
@@ -21,11 +20,6 @@ export function Sidebar({ project, sessions }: { project: Project; sessions: Ses
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-drag-region">
-        <BrandMark size={25} />
-        <span>Vivlio</span>
-      </div>
-
       <nav aria-label="Workspace" className="main-nav">
         {navigation.map((item) => {
           const Icon = item.icon

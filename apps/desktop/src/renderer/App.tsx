@@ -46,9 +46,10 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      <div aria-hidden="true" className="window-titlebar" />
+      <RepositoryBar project={project} selectedSession={selectedSession ?? null} />
       <Sidebar project={project} sessions={projectSessions} />
       <main className="workspace">
-        <RepositoryBar project={project} selectedSession={selectedSession ?? null} />
         {selectedSession ? <SessionDetail session={selectedSession} /> : <WorkspaceView project={project} sessions={projectSessions} view={view} />}
       </main>
 
