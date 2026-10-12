@@ -105,7 +105,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .repository-control.branch-control { width: 222px; }
 .repository-control.workspace-control { width: 268px; }
 .repository-control > svg:first-child { flex: 0 0 auto; color: #76817c; }
-.repository-control.active .repository-control-icon { box-shadow: inset 0 0 0 1px #ffffff12; }
 .repository-control-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; }
 .repository-control-copy small { color: #626b67; font-size: 8px; font-weight: 650; letter-spacing: .075em; text-transform: uppercase; }
 .repository-control-copy strong { overflow: hidden; font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
@@ -148,9 +147,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .branch-base strong { color: #abb3af; font-weight: 550; }
 .branch-create-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 15px; }
 .repository-empty { padding: 24px 14px; color: #65706a; font-size: 9px; text-align: center; }
-.repository-control-icon { display: grid; width: 27px; height: 27px; flex: 0 0 auto; place-items: center; border-radius: 7px; color: #9bcaae; background: #1a3022; }
-.repository-control-icon.branch { color: #c8b2d7; background: #2a2230; }
-.repository-control-icon.workspace { color: #a9c8d8; background: #1c2d35; }
+.repository-control-icon { display: grid; width: 20px; height: 20px; flex: 0 0 auto; place-items: center; color: #aab2ae; }
+.repository-control-icon.branch, .repository-control-icon.workspace { color: #aab2ae; }
 .repository-menu-list, .branch-menu-list { max-height: 310px; overflow: auto; padding: 5px 6px; }
 .popover-title { padding: 10px 13px 5px; color: #626c67; font-size: 8px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; }
 .repository-menu-row, .branch-menu-row { display: flex; width: 100%; min-height: 44px; align-items: center; gap: 10px; padding: 7px 8px; border: 0; border-radius: 6px; color: #a3aca7; background: transparent; text-align: left; cursor: pointer; }
@@ -303,7 +301,7 @@ h1, h2, h3 { font-family: 'Libron', Georgia, 'Times New Roman', serif; }
 .repository-control { border-color: #202020; color: #eee; }
 .repository-control:hover, .repository-control.active { background: #151515; }
 .repository-control-copy small, .repository-control > svg:last-child { color: #666; }
-.repository-control-icon, .repository-control-icon.branch, .repository-control-icon.workspace { border: 1px solid #292929; border-radius: 5px; color: #cfcfcf; background: #111; }
+.repository-control-icon, .repository-control-icon.branch, .repository-control-icon.workspace { border: 0; border-radius: 0; color: #cfcfcf; background: transparent; }
 .branch-control .repository-control-copy strong, .branch-menu-row strong { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 .repository-control.active .repository-control-icon { color: #fff; box-shadow: none; }
 .toolbar-icon-button { border-radius: 5px; color: #777; }
