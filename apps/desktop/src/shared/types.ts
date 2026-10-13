@@ -135,7 +135,24 @@ export interface CommitResult {
   repositoryStatus: RepositoryStatus
 }
 
+export interface GitHubUser {
+  login: string
+  name?: string
+  avatarUrl: string
+}
+
+export interface GitHubAuthState {
+  configured: boolean
+  signedIn: boolean
+  user?: GitHubUser
+}
+
 export interface AppApi {
+  github: {
+    getStatus(): Promise<GitHubAuthState>
+    signIn(): Promise<GitHubAuthState>
+    signOut(): Promise<GitHubAuthState>
+  }
   workspace: {
     getSnapshot(): Promise<WorkspaceSnapshot>
     openRepository(): Promise<WorkspaceSnapshot>
@@ -172,6 +189,7 @@ export interface AppApi {
   }
   events: {
     onWorkspaceChanged(callback: (snapshot: WorkspaceSnapshot) => void): () => void
+    onGitHubAuthChanged(callback: (state: GitHubAuthState) => void): () => void
   }
 }
 

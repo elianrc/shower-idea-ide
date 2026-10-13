@@ -1,7 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { AppApi, CreateSessionInput, WorkspaceSnapshot } from '../shared/types'
+import type { AppApi, CreateSessionInput, GitHubAuthState, WorkspaceSnapshot } from '../shared/types'
 
 const api: AppApi = {
+  github: {
+    getStatus: () => ipcRenderer.invoke('github:getStatus'),
+    signIn: () => ipcRenderer.invoke('github:signIn'),
+    signOut: () => ipcRenderer.invoke('github:signOut'),
+  },
   workspace: {
     getSnapshot: () => ipcRenderer.invoke('workspace:getSnapshot'),
     openRepository: () => ipcRenderer.invoke('workspace:openRepository'),
@@ -41,6 +46,11 @@ const api: AppApi = {
       const listener = (_event: Electron.IpcRendererEvent, snapshot: WorkspaceSnapshot) => callback(snapshot)
       ipcRenderer.on('workspace:changed', listener)
       return () => ipcRenderer.removeListener('workspace:changed', listener)
+    },
+    onGitHubAuthChanged: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, state: GitHubAuthState) => callback(state)
+      ipcRenderer.on('github:authChanged', listener)
+      return () => ipcRenderer.removeListener('github:authChanged', listener)
     },
   },
 }

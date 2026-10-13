@@ -3,6 +3,8 @@ import { basename, resolve } from 'node:path'
 import type { BranchInfo, ChangedFile, Project, RepositoryStatus, SessionDiff } from '../../shared/types'
 import { ProcessManager } from './process-manager'
 
+type GitCredentialProvider = () => Promise<Record<string, string> | null>
+
 const STATUS_MAP: Record<string, ChangedFile['status']> = {
   A: 'added',
   M: 'modified',
@@ -12,7 +14,10 @@ const STATUS_MAP: Record<string, ChangedFile['status']> = {
 }
 
 export class GitService {
-  constructor(private readonly processes: ProcessManager) {}
+  constructor(
+    private readonly processes: ProcessManager,
+    private readonly getCredentialEnvironment?: GitCredentialProvider,
+  ) {}
 
   async inspectRepository(path: string): Promise<Omit<Project, 'id' | 'openedAt'>> {
     const root = (await this.git(path, ['rev-parse', '--show-toplevel'])).stdout.trim()
@@ -80,15 +85,22 @@ export class GitService {
   async fetchOrigin(repo: string): Promise<void> {
     const remote = await this.git(repo, ['remote', 'get-url', 'origin'], true)
     if (remote.code !== 0 || !remote.stdout.trim()) throw new Error('This repository does not have an origin remote.')
-    const result = await this.git(repo, ['fetch', '--prune', 'origin'], true, {
+    const nonInteractiveEnvironment = {
       GCM_INTERACTIVE: 'Never',
       GIT_TERMINAL_PROMPT: '0',
-    })
+    }
+    let result = await this.git(repo, ['fetch', '--prune', 'origin'], true, nonInteractiveEnvironment)
+    const githubHttpsRemote = /^https:\/\/github\.com\//i.test(remote.stdout.trim())
+    if (result.code !== 0 && githubHttpsRemote && isAuthenticationError(result.stderr)) {
+      const credentials = await this.getCredentialEnvironment?.()
+      if (credentials) {
+        result = await this.git(repo, ['fetch', '--prune', 'origin'], true, credentials)
+      }
+    }
     if (result.code !== 0) {
       const detail = result.stderr.trim()
-      const needsAuthentication = /authentication failed|could not read (?:username|password)|terminal prompts disabled/i.test(detail)
-      throw new Error(needsAuthentication
-        ? 'GitHub sign-in required. Install GitHub CLI and run “gh auth login” in Terminal, then fetch again.'
+      throw new Error(githubHttpsRemote && isAuthenticationError(detail)
+        ? 'GitHub sign-in required.'
         : detail || 'Unable to fetch origin.')
     }
   }
@@ -243,4 +255,8 @@ export class GitService {
     }
     return result
   }
+}
+
+function isAuthenticationError(detail: string): boolean {
+  return /authentication failed|could not read (?:username|password)|terminal prompts disabled|invalid username or token|repository not found/i.test(detail)
 }

@@ -1,0 +1,2 @@
+declare const __VIVLIO_GITHUB_CLIENT_ID__: string
+declare const __VIVLIO_GITHUB_AUTH_BROKER_URL__: string

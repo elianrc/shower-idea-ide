@@ -4,16 +4,22 @@ import { BrowserWindow, dialog, ipcMain } from 'electron'
 import type { CreateSessionInput, Project, WorkspaceSnapshot } from '../shared/types'
 import { CodexAdapter } from './services/agent'
 import { GitService } from './services/git-service'
+import { GitHubAuthService } from './services/github-auth'
 import { ProcessManager } from './services/process-manager'
 import { WorkspaceStore } from './services/store'
 import { SessionManager } from './services/task-manager'
 import { WorkspaceFilesService } from './services/workspace-files'
 
-export async function registerIpc(userDataPath: string): Promise<void> {
+export interface IpcController {
+  handleOpenUrl(url: string): Promise<boolean>
+}
+
+export async function registerIpc(userDataPath: string): Promise<IpcController> {
   const store = new WorkspaceStore(join(userDataPath, 'workspace.json'))
   await store.load()
   const processes = new ProcessManager()
-  const git = new GitService(processes)
+  const github = new GitHubAuthService(userDataPath)
+  const git = new GitService(processes, () => github.getGitEnvironment())
   const agent = new CodexAdapter(processes)
   const files = new WorkspaceFilesService(processes)
   const broadcast = (snapshot: WorkspaceSnapshot) => {
@@ -29,6 +35,10 @@ export async function registerIpc(userDataPath: string): Promise<void> {
     join(userDataPath, 'worktrees'),
     broadcast,
   )
+
+  ipcMain.handle('github:getStatus', () => github.getStatus())
+  ipcMain.handle('github:signIn', () => github.signIn())
+  ipcMain.handle('github:signOut', () => github.signOut())
 
   ipcMain.handle('workspace:getSnapshot', () => store.snapshot())
   ipcMain.handle('workspace:openRepository', async () => {
@@ -130,6 +140,8 @@ export async function registerIpc(userDataPath: string): Promise<void> {
   ipcMain.handle('sessions:runVerification', (_event, sessionId: string) => sessions.runVerification(sessionId))
   ipcMain.handle('sessions:commit', (_event, sessionId: string, message?: string) => sessions.commit(sessionId, message))
   ipcMain.handle('sessions:getDiff', (_event, sessionId: string, filePath?: string) => sessions.getDiff(sessionId, filePath))
+
+  return { handleOpenUrl: (url) => github.handleCallback(url) }
 }
 
 function requireProject(store: WorkspaceStore): Project {
