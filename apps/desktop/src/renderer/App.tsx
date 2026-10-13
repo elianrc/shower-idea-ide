@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { AlertCircle, X } from 'lucide-react'
+import { AlertCircle, LoaderCircle, LogIn, X } from 'lucide-react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { Dashboard } from './components/Dashboard'
 import { CodeWorkbench } from './components/CodeWorkbench'
@@ -20,6 +20,9 @@ export default function App() {
   const openRepository = useAppStore((state) => state.openRepository)
   const error = useAppStore((state) => state.error)
   const clearError = useAppStore((state) => state.clearError)
+  const githubAuthRequired = useAppStore((state) => state.githubAuthRequired)
+  const isSigningInToGitHub = useAppStore((state) => state.isSigningInToGitHub)
+  const signInWithGitHub = useAppStore((state) => state.signInWithGitHub)
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined
@@ -65,6 +68,12 @@ export default function App() {
       {error ? (
         <div className="error-toast" role="alert">
           <AlertCircle size={17} /><span>{error}</span>
+          {githubAuthRequired ? (
+            <button className="error-toast-action" disabled={isSigningInToGitHub} onClick={() => void signInWithGitHub()} type="button">
+              {isSigningInToGitHub ? <LoaderCircle className="spin-slow" size={14} /> : <LogIn size={14} />}
+              {isSigningInToGitHub ? 'Waiting…' : 'Sign in'}
+            </button>
+          ) : null}
           <button aria-label="Dismiss error" onClick={clearError} type="button"><X size={15} /></button>
         </div>
       ) : null}

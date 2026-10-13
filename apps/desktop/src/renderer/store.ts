@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { BranchInfo, CreateSessionInput, RepositoryStatus, Session, WorkspaceSnapshot } from '../shared/types'
+import type { BranchInfo, CreateSessionInput, GitHubAuthState, RepositoryStatus, Session, WorkspaceSnapshot } from '../shared/types'
 
 interface AppState extends WorkspaceSnapshot {
   isLoading: boolean
@@ -8,12 +8,18 @@ interface AppState extends WorkspaceSnapshot {
   isNewSessionOpen: boolean
   branches: BranchInfo[]
   repositoryStatus: RepositoryStatus | null
+  githubAuth: GitHubAuthState
+  isSigningInToGitHub: boolean
+  githubAuthRequired: boolean
+  pendingFetchSessionId: string | null
   initialize(): Promise<() => void>
   openRepository(): Promise<void>
   selectRepository(projectId: string): Promise<void>
   refreshBranches(): Promise<void>
   refreshRepositoryStatus(sessionId?: string): Promise<void>
   fetchOrigin(sessionId?: string): Promise<boolean>
+  signInWithGitHub(): Promise<boolean>
+  signOutFromGitHub(): Promise<void>
   setRepositoryStatus(status: RepositoryStatus): void
   switchBranch(name: string): Promise<boolean>
   createBranch(name: string, baseBranch?: string): Promise<boolean>
@@ -42,21 +48,28 @@ export const useAppStore = create<AppState>((set, get) => ({
   isNewSessionOpen: false,
   branches: [],
   repositoryStatus: null,
+  githubAuth: { configured: false, signedIn: false },
+  isSigningInToGitHub: false,
+  githubAuthRequired: false,
+  pendingFetchSessionId: null,
 
   async initialize() {
     try {
-      const snapshot = await window.vivlio.workspace.getSnapshot()
+      const [snapshot, githubAuth] = await Promise.all([
+        window.vivlio.workspace.getSnapshot(),
+        window.vivlio.github.getStatus(),
+      ])
       const [branches, repositoryStatus] = snapshot.project
         ? await Promise.all([
             window.vivlio.branches.list(),
             window.vivlio.workspace.getRepositoryStatus(),
           ])
         : [[], null]
-      set({ ...snapshot, branches, repositoryStatus, isLoading: false })
+      set({ ...snapshot, githubAuth, branches, repositoryStatus, isLoading: false })
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
     }
-    return window.vivlio.events.onWorkspaceChanged((snapshot) => {
+    const unsubscribeWorkspace = window.vivlio.events.onWorkspaceChanged((snapshot) => {
       const selectedSessionId = get().selectedSessionId
       set({
         ...snapshot,
@@ -65,6 +78,11 @@ export const useAppStore = create<AppState>((set, get) => ({
           : null,
       })
     })
+    const unsubscribeGitHub = window.vivlio.events.onGitHubAuthChanged((githubAuth) => set({ githubAuth }))
+    return () => {
+      unsubscribeWorkspace()
+      unsubscribeGitHub()
+    }
   },
 
   async openRepository() {
@@ -119,10 +137,45 @@ export const useAppStore = create<AppState>((set, get) => ({
   async fetchOrigin(sessionId) {
     try {
       set({ repositoryStatus: await window.vivlio.workspace.fetchOrigin(sessionId) })
+      set({ githubAuthRequired: false, pendingFetchSessionId: null })
       return true
     } catch (error) {
-      set({ error: errorMessage(error) })
+      const message = errorMessage(error)
+      const githubAuthRequired = message === 'GitHub sign-in required.'
+      set({
+        error: githubAuthRequired ? 'Sign in to GitHub to fetch this repository.' : message,
+        githubAuthRequired,
+        pendingFetchSessionId: githubAuthRequired ? sessionId ?? 'workspace' : null,
+      })
       return false
+    }
+  },
+
+  async signInWithGitHub() {
+    if (!get().githubAuth.configured) {
+      set({ error: 'GitHub sign-in is not configured in this build.' })
+      return false
+    }
+    set({ isSigningInToGitHub: true, error: null })
+    try {
+      const githubAuth = await window.vivlio.github.signIn()
+      const pendingFetchSessionId = get().pendingFetchSessionId
+      set({ githubAuth, isSigningInToGitHub: false, githubAuthRequired: false, pendingFetchSessionId: null })
+      if (pendingFetchSessionId) {
+        await get().fetchOrigin(pendingFetchSessionId === 'workspace' ? undefined : pendingFetchSessionId)
+      }
+      return true
+    } catch (error) {
+      set({ error: errorMessage(error), isSigningInToGitHub: false })
+      return false
+    }
+  },
+
+  async signOutFromGitHub() {
+    try {
+      set({ githubAuth: await window.vivlio.github.signOut(), githubAuthRequired: false, pendingFetchSessionId: null })
+    } catch (error) {
+      set({ error: errorMessage(error) })
     }
   },
 
@@ -220,5 +273,5 @@ export const useAppStore = create<AppState>((set, get) => ({
     void get().refreshRepositoryStatus(selectedSessionId ?? undefined)
   },
   setNewSessionOpen: (isNewSessionOpen) => set({ isNewSessionOpen }),
-  clearError: () => set({ error: null }),
+  clearError: () => set({ error: null, githubAuthRequired: false, pendingFetchSessionId: null }),
 }))

@@ -7,6 +7,8 @@ import {
   FolderGit2,
   GitBranch,
   LoaderCircle,
+  LogIn,
+  LogOut,
   Plus,
   Search,
   X,
@@ -23,12 +25,16 @@ export function RepositoryBar({ project, selectedSession }: { project: Project; 
   const sessions = useAppStore((state) => state.sessions)
   const branches = useAppStore((state) => state.branches)
   const repositoryStatus = useAppStore((state) => state.repositoryStatus)
+  const githubAuth = useAppStore((state) => state.githubAuth)
+  const isSigningInToGitHub = useAppStore((state) => state.isSigningInToGitHub)
   const isLoading = useAppStore((state) => state.isLoading)
   const openRepository = useAppStore((state) => state.openRepository)
   const selectRepository = useAppStore((state) => state.selectRepository)
   const switchBranch = useAppStore((state) => state.switchBranch)
   const createBranch = useAppStore((state) => state.createBranch)
   const fetchOrigin = useAppStore((state) => state.fetchOrigin)
+  const signInWithGitHub = useAppStore((state) => state.signInWithGitHub)
+  const signOutFromGitHub = useAppStore((state) => state.signOutFromGitHub)
   const selectSession = useAppStore((state) => state.selectSession)
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null)
   const [branchQuery, setBranchQuery] = useState('')
@@ -152,6 +158,33 @@ export function RepositoryBar({ project, selectedSession }: { project: Project; 
             >
               <Plus size={15} /> Add existing repository…
             </button>
+            <div className="github-account-section">
+              <div className="popover-title">GitHub account</div>
+              {githubAuth.signedIn && githubAuth.user ? (
+                <div className="github-account-row">
+                  <img alt="" src={githubAuth.user.avatarUrl} />
+                  <span>
+                    <strong>{githubAuth.user.name ?? githubAuth.user.login}</strong>
+                    <small>@{githubAuth.user.login}</small>
+                  </span>
+                  <button aria-label="Sign out of GitHub" onClick={() => void signOutFromGitHub()} type="button">
+                    <LogOut size={15} /> <span>Sign out</span>
+                  </button>
+                </div>
+              ) : githubAuth.configured ? (
+                <button
+                  className="github-sign-in-action"
+                  disabled={isSigningInToGitHub}
+                  onClick={() => void signInWithGitHub()}
+                  type="button"
+                >
+                  {isSigningInToGitHub ? <LoaderCircle className="spin-slow" size={16} /> : <LogIn size={16} />}
+                  <span><strong>{isSigningInToGitHub ? 'Waiting for GitHub…' : 'Sign in with GitHub'}</strong><small>Fetch private repositories without Terminal setup</small></span>
+                </button>
+              ) : (
+                <p className="github-account-unavailable">Sign-in is not configured in this build.</p>
+              )}
+            </div>
           </div>
         ) : null}
       </div>

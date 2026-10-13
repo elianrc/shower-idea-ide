@@ -136,4 +136,31 @@ describe('GitService', () => {
       env: { GCM_INTERACTIVE: 'Never', GIT_TERMINAL_PROMPT: '0' },
     })
   })
+
+  it('retries a GitHub HTTPS fetch with in-app credentials', async () => {
+    const credentialEnvironment = {
+      GIT_ASKPASS: '/tmp/vivlio-test-askpass',
+      GIT_ASKPASS_REQUIRE: 'force',
+      GIT_TERMINAL_PROMPT: '0',
+      GCM_INTERACTIVE: 'Never',
+      VIVLIO_GIT_USERNAME: 'x-access-token',
+      VIVLIO_GIT_TOKEN: 'test-token-not-a-real-secret',
+    }
+    const processes = {
+      run: vi.fn()
+        .mockResolvedValueOnce({ code: 0, stdout: 'https://github.com/example/private.git\n', stderr: '' })
+        .mockResolvedValueOnce({ code: 128, stdout: '', stderr: 'fatal: Authentication failed\n' })
+        .mockResolvedValueOnce({ code: 0, stdout: '', stderr: '' }),
+    }
+    const authenticatedGit = new GitService(
+      processes as unknown as ProcessManager,
+      async () => credentialEnvironment,
+    )
+
+    await expect(authenticatedGit.fetchOrigin(repository)).resolves.toBeUndefined()
+    expect(processes.run).toHaveBeenLastCalledWith('git', ['fetch', '--prune', 'origin'], {
+      cwd: repository,
+      env: credentialEnvironment,
+    })
+  })
 })
