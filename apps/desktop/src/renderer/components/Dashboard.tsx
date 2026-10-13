@@ -1,4 +1,4 @@
-import { ArrowUpRight, Bot, GitBranch, MessageSquarePlus, Plus, TerminalSquare } from 'lucide-react'
+import { ArrowRight, GitBranch, MessageCircle, MessageSquarePlus, Plus } from 'lucide-react'
 import type { Project, Session } from '../../shared/types'
 import { useAppStore } from '../store'
 import { StatusPill } from './StatusPill'
@@ -6,58 +6,38 @@ import { StatusPill } from './StatusPill'
 export function Dashboard({ project, sessions }: { project: Project; sessions: Session[] }) {
   const selectSession = useAppStore((state) => state.selectSession)
   const setNewSessionOpen = useAppStore((state) => state.setNewSessionOpen)
-  const openSessions = sessions.filter((session) => session.status !== 'completed')
-  const completed = sessions.filter((session) => session.status === 'completed').slice(0, 5)
+  const orderedSessions = [...sessions].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
 
   return (
-    <div className="page dashboard-page sessions-page">
-      <header className="page-header session-home-header">
-        <div>
-          <p className="eyebrow">Agent workspace</p>
+    <div className="repository-sessions">
+      <header className="repository-sessions-header">
+        <div className="repository-sessions-title">
           <h1>{project.name}</h1>
-          <div className="repo-meta">
-            <span>{project.branch}</span>
-            <span className="meta-separator">/</span>
-            <span>{project.isClean ? 'Working tree clean' : 'Uncommitted changes'}</span>
-          </div>
+          <span><GitBranch size={12} />{project.branch}</span>
         </div>
-        <button className="primary-button" onClick={() => setNewSessionOpen(true)} type="button">
-          <Plus size={17} /> New session
+        <button className="new-chat-button" onClick={() => setNewSessionOpen(true)} type="button">
+          <Plus size={15} /> New session
         </button>
       </header>
 
-      {openSessions.length === 0 ? (
-        <section className="empty-dashboard session-launcher">
-          <div className="empty-orbit"><TerminalSquare size={25} /></div>
-          <h2>Open a coding session</h2>
-          <p>Talk to Codex in this repository. Use the current branch for quick work or create an isolated worktree for parallel changes.</p>
-          <button className="secondary-button" onClick={() => setNewSessionOpen(true)} type="button">
-            Start with Codex <ArrowUpRight size={15} />
-          </button>
-        </section>
-      ) : (
-        <section className="dashboard-section">
-          <div className="section-heading"><h2>Open sessions</h2><span>{openSessions.length}</span></div>
-          <div className="task-grid session-grid">
-            {openSessions.map((session) => <SessionCard key={session.id} onOpen={() => selectSession(session.id)} session={session} />)}
+      <section className="repository-session-list" aria-labelledby="repository-sessions-heading">
+        <div className="repository-session-list-heading">
+          <h2 id="repository-sessions-heading">Sessions</h2>
+          <span>{orderedSessions.length}</span>
+        </div>
+        {orderedSessions.length === 0 ? (
+          <div className="repository-sessions-empty">
+            <MessageSquarePlus size={22} />
+            <h2>No sessions yet</h2>
+            <p>Start a conversation with Codex for this repository.</p>
+            <button className="secondary-button" onClick={() => setNewSessionOpen(true)} type="button">
+              Start a session
+            </button>
           </div>
-        </section>
-      )}
-
-      <section className="dashboard-section recent-section">
-        <div className="section-heading"><h2>Committed sessions</h2></div>
-        {completed.length === 0 ? (
-          <div className="quiet-empty"><MessageSquarePlus size={18} /> Committed sessions will appear here.</div>
         ) : (
-          <div className="recent-list">
-            {completed.map((session) => (
-              <button className="recent-row" key={session.id} onClick={() => selectSession(session.id)} type="button">
-                <span className="recent-check"><Bot size={14} /></span>
-                <span className="recent-title">{session.title}</span>
-                <span>{session.changedFiles.length} files</span>
-                <span>{formatRelativeTime(session.updatedAt)}</span>
-                <ArrowUpRight size={15} />
-              </button>
+          <div className="repository-session-rows">
+            {orderedSessions.map((session) => (
+              <SessionRow key={session.id} onOpen={() => selectSession(session.id)} session={session} />
             ))}
           </div>
         )}
@@ -66,21 +46,21 @@ export function Dashboard({ project, sessions }: { project: Project; sessions: S
   )
 }
 
-function SessionCard({ session, onOpen }: { session: Session; onOpen(): void }) {
+function SessionRow({ session, onOpen }: { session: Session; onOpen(): void }) {
   const lastResponse = [...session.activity].reverse().find((entry) => entry.kind === 'thought')
   return (
-    <button className="task-card session-card" onClick={onOpen} type="button">
-      <div className="task-card-top">
+    <button className="repository-session-row" onClick={onOpen} type="button">
+      <MessageCircle aria-hidden="true" size={16} />
+      <span className="repository-session-copy">
+        <strong>{session.title}</strong>
+        <small>{lastResponse?.text ?? session.summary ?? session.initialPrompt}</small>
+      </span>
+      <span className="repository-session-meta">
         <StatusPill status={session.status} />
-        <ArrowUpRight className="task-card-arrow" size={16} />
-      </div>
-      <h3>{session.title}</h3>
-      <p>{lastResponse?.text ?? 'Connecting to the agent CLI…'}</p>
-      <div className="task-card-footer session-card-footer">
-        <span><Bot size={14} /> Codex</span>
-        <span><GitBranch size={13} /> {session.branch}</span>
-        <span className="task-time">{formatRelativeTime(session.updatedAt)}</span>
-      </div>
+        <span><GitBranch size={11} />{session.branch}</span>
+        <time dateTime={session.updatedAt}>{formatRelativeTime(session.updatedAt)}</time>
+      </span>
+      <ArrowRight aria-hidden="true" size={15} />
     </button>
   )
 }
