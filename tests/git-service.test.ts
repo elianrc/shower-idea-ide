@@ -56,8 +56,10 @@ describe('GitService', () => {
     expect(diff.raw).toContain('Now with a greeting.')
     expect(diff.raw).toContain("export const greeting = 'hello'")
 
-    const revision = await git.commit(worktree, 'Add greeting')
+    const revision = await git.commit(worktree, 'Add greeting\n\nCreated from the Changes panel.')
     expect(revision).toMatch(/^[a-f0-9]{7,}$/)
+    const commitMessage = await execute('git', ['log', '-1', '--pretty=%B'], { cwd: worktree })
+    expect(commitMessage.stdout.trim()).toBe('Add greeting\n\nCreated from the Changes panel.')
     expect(await git.getChangedFiles(worktree)).toEqual([])
 
     await git.removeWorktree(repository, worktree)

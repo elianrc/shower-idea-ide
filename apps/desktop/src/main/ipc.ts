@@ -60,6 +60,27 @@ export async function registerIpc(userDataPath: string): Promise<void> {
     await git.fetchOrigin(project.path)
     return git.getRepositoryStatus(resolveWorkspacePath(store, sessionId))
   })
+  ipcMain.handle('workspace:commit', async (_event, summary: string, description?: string, sessionId?: string) => {
+    const title = summary.trim()
+    if (!title) throw new Error('Enter a commit summary.')
+    if (title.length > 120) throw new Error('Keep the commit summary under 120 characters.')
+    const body = description?.trim()
+    const message = body ? `${title}\n\n${body}` : title
+    const workspacePath = resolveWorkspacePath(store, sessionId)
+    let commit: string
+    if (sessionId) {
+      const committedSession = await sessions.commit(sessionId, message)
+      if (!committedSession.commit) throw new Error(committedSession.error || 'Unable to commit session changes.')
+      commit = committedSession.commit
+    } else {
+      commit = await git.commit(workspacePath, message)
+    }
+    const [changedFiles, repositoryStatus] = await Promise.all([
+      git.getChangedFiles(workspacePath),
+      git.getRepositoryStatus(workspacePath),
+    ])
+    return { commit, changedFiles, repositoryStatus }
+  })
   ipcMain.handle('branches:list', () => {
     const project = requireProject(store)
     return git.listBranches(project.path)
@@ -107,7 +128,7 @@ export async function registerIpc(userDataPath: string): Promise<void> {
   )
   ipcMain.handle('sessions:stop', (_event, sessionId: string) => sessions.stop(sessionId))
   ipcMain.handle('sessions:runVerification', (_event, sessionId: string) => sessions.runVerification(sessionId))
-  ipcMain.handle('sessions:commit', (_event, sessionId: string) => sessions.commit(sessionId))
+  ipcMain.handle('sessions:commit', (_event, sessionId: string, message?: string) => sessions.commit(sessionId, message))
   ipcMain.handle('sessions:getDiff', (_event, sessionId: string, filePath?: string) => sessions.getDiff(sessionId, filePath))
 }
 

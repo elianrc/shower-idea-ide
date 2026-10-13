@@ -232,7 +232,7 @@ export class SessionManager {
     return this.requireSession(sessionId)
   }
 
-  async commit(sessionId: string): Promise<Session> {
+  async commit(sessionId: string, message?: string): Promise<Session> {
     const session = this.requireSession(sessionId)
     if (session.status === 'running' || session.status === 'starting' || session.status === 'verifying') {
       throw new Error('Wait for the active process to finish before committing.')
@@ -240,11 +240,12 @@ export class SessionManager {
     await this.refreshChanges(sessionId)
     if (this.requireSession(sessionId).changedFiles.length === 0) throw new Error('There are no changes to commit.')
     try {
-      const commit = await this.git.commit(session.workspacePath, session.title)
+      const commit = await this.git.commit(session.workspacePath, message?.trim() || session.title)
       await this.store.updateSession(sessionId, (current) => {
         current.status = 'completed'
         current.commit = commit
         current.completedAt = new Date().toISOString()
+        current.changedFiles = []
       })
       await this.addActivity(sessionId, 'milestone', `Committed changes as ${commit}.`)
       return this.requireSession(sessionId)

@@ -129,6 +129,12 @@ export interface FileSaveResult {
   repositoryStatus: RepositoryStatus
 }
 
+export interface CommitResult {
+  commit: string
+  changedFiles: ChangedFile[]
+  repositoryStatus: RepositoryStatus
+}
+
 export interface AppApi {
   workspace: {
     getSnapshot(): Promise<WorkspaceSnapshot>
@@ -137,6 +143,7 @@ export interface AppApi {
     selectRepository(projectId: string): Promise<WorkspaceSnapshot>
     getRepositoryStatus(sessionId?: string): Promise<RepositoryStatus>
     fetchOrigin(sessionId?: string): Promise<RepositoryStatus>
+    commit(summary: string, description?: string, sessionId?: string): Promise<CommitResult>
   }
   branches: {
     list(): Promise<BranchInfo[]>
@@ -160,7 +167,7 @@ export interface AppApi {
     sendMessage(sessionId: string, message: string): Promise<Session>
     stop(sessionId: string): Promise<Session>
     runVerification(sessionId: string): Promise<Session>
-    commit(sessionId: string): Promise<Session>
+    commit(sessionId: string, message?: string): Promise<Session>
     getDiff(sessionId: string, filePath?: string): Promise<SessionDiff>
   }
   events: {

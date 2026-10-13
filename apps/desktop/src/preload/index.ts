@@ -9,6 +9,7 @@ const api: AppApi = {
     selectRepository: (projectId) => ipcRenderer.invoke('workspace:selectRepository', projectId),
     getRepositoryStatus: (sessionId) => ipcRenderer.invoke('workspace:getRepositoryStatus', sessionId),
     fetchOrigin: (sessionId) => ipcRenderer.invoke('workspace:fetchOrigin', sessionId),
+    commit: (summary, description, sessionId) => ipcRenderer.invoke('workspace:commit', summary, description, sessionId),
   },
   branches: {
     list: () => ipcRenderer.invoke('branches:list'),
@@ -32,7 +33,7 @@ const api: AppApi = {
     sendMessage: (sessionId, message) => ipcRenderer.invoke('sessions:sendMessage', sessionId, message),
     stop: (sessionId) => ipcRenderer.invoke('sessions:stop', sessionId),
     runVerification: (sessionId) => ipcRenderer.invoke('sessions:runVerification', sessionId),
-    commit: (sessionId) => ipcRenderer.invoke('sessions:commit', sessionId),
+    commit: (sessionId, message) => ipcRenderer.invoke('sessions:commit', sessionId, message),
     getDiff: (sessionId, filePath) => ipcRenderer.invoke('sessions:getDiff', sessionId, filePath),
   },
   events: {

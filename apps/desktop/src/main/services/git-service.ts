@@ -231,7 +231,7 @@ export class GitService {
     const add = await this.git(repo, ['add', '-A'], true)
     if (add.code !== 0) throw new Error(add.stderr.trim() || 'Unable to stage session changes.')
     const commit = await this.git(repo, ['commit', '-m', message], true)
-    if (commit.code !== 0) throw new Error(commit.stderr.trim() || 'Unable to commit session changes.')
+    if (commit.code !== 0) throw new Error(commit.stderr.trim() || 'Unable to commit changes.')
     const revision = await this.git(repo, ['rev-parse', '--short', 'HEAD'])
     return revision.stdout.trim()
   }
