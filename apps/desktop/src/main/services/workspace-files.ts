@@ -1,4 +1,4 @@
-import { lstat, readFile, readlink } from 'node:fs/promises'
+import { lstat, readFile, readlink, writeFile } from 'node:fs/promises'
 import { basename, extname, isAbsolute, relative, resolve } from 'node:path'
 import type { SourceFile, WorkspaceFileNode } from '../../shared/types'
 import { ProcessManager } from './process-manager'
@@ -87,6 +87,16 @@ export class WorkspaceFilesService {
       language: languageForPath(relativePath),
       size: metadata.size,
     }
+  }
+
+  async write(root: string, requestedPath: string, contents: string): Promise<SourceFile> {
+    const { absolutePath } = safeWorkspacePath(root, requestedPath)
+    const metadata = await lstat(absolutePath)
+    if (metadata.isSymbolicLink()) throw new Error('Symbolic links cannot be edited in Vivlio.')
+    if (!metadata.isFile()) throw new Error('Only files can be saved from the code editor.')
+    if (Buffer.byteLength(contents) > MAX_SOURCE_FILE_BYTES) throw new Error('This file is too large to save from Vivlio.')
+    await writeFile(absolutePath, contents, 'utf8')
+    return this.read(root, requestedPath)
   }
 }
 

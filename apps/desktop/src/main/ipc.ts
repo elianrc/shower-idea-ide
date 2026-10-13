@@ -55,6 +55,11 @@ export async function registerIpc(userDataPath: string): Promise<void> {
     if (!session || session.projectId !== project.id) throw new Error('That session is not part of the current repository.')
     return git.getRepositoryStatus(session.workspacePath)
   })
+  ipcMain.handle('workspace:fetchOrigin', async (_event, sessionId?: string) => {
+    const project = requireProject(store)
+    await git.fetchOrigin(project.path)
+    return git.getRepositoryStatus(resolveWorkspacePath(store, sessionId))
+  })
   ipcMain.handle('branches:list', () => {
     const project = requireProject(store)
     return git.listBranches(project.path)
@@ -75,6 +80,16 @@ export async function registerIpc(userDataPath: string): Promise<void> {
   ipcMain.handle('files:read', (_event, path: string, sessionId?: string) =>
     files.read(resolveWorkspacePath(store, sessionId), path),
   )
+  ipcMain.handle('files:save', async (_event, path: string, contents: string, sessionId?: string) => {
+    const workspacePath = resolveWorkspacePath(store, sessionId)
+    const file = await files.write(workspacePath, path, contents)
+    const [changedFiles, repositoryStatus] = await Promise.all([
+      git.getChangedFiles(workspacePath),
+      git.getRepositoryStatus(workspacePath),
+    ])
+    if (sessionId) await sessions.setChangedFiles(sessionId, changedFiles)
+    return { file, changedFiles, repositoryStatus }
+  })
   ipcMain.handle('files:getChangedFiles', (_event, sessionId?: string) =>
     git.getChangedFiles(resolveWorkspacePath(store, sessionId)),
   )

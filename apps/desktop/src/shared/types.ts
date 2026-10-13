@@ -123,6 +123,12 @@ export interface SourceFile {
   size: number
 }
 
+export interface FileSaveResult {
+  file: SourceFile
+  changedFiles: ChangedFile[]
+  repositoryStatus: RepositoryStatus
+}
+
 export interface AppApi {
   workspace: {
     getSnapshot(): Promise<WorkspaceSnapshot>
@@ -130,6 +136,7 @@ export interface AppApi {
     openRepositoryAt(path: string): Promise<WorkspaceSnapshot>
     selectRepository(projectId: string): Promise<WorkspaceSnapshot>
     getRepositoryStatus(sessionId?: string): Promise<RepositoryStatus>
+    fetchOrigin(sessionId?: string): Promise<RepositoryStatus>
   }
   branches: {
     list(): Promise<BranchInfo[]>
@@ -139,6 +146,7 @@ export interface AppApi {
   files: {
     list(sessionId?: string): Promise<WorkspaceFileNode[]>
     read(path: string, sessionId?: string): Promise<SourceFile>
+    save(path: string, contents: string, sessionId?: string): Promise<FileSaveResult>
     getChangedFiles(sessionId?: string): Promise<ChangedFile[]>
     getDiff(filePath?: string, sessionId?: string): Promise<SessionDiff>
   }

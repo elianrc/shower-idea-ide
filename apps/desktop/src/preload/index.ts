@@ -8,6 +8,7 @@ const api: AppApi = {
     openRepositoryAt: (path) => ipcRenderer.invoke('workspace:openRepositoryAt', path),
     selectRepository: (projectId) => ipcRenderer.invoke('workspace:selectRepository', projectId),
     getRepositoryStatus: (sessionId) => ipcRenderer.invoke('workspace:getRepositoryStatus', sessionId),
+    fetchOrigin: (sessionId) => ipcRenderer.invoke('workspace:fetchOrigin', sessionId),
   },
   branches: {
     list: () => ipcRenderer.invoke('branches:list'),
@@ -17,6 +18,7 @@ const api: AppApi = {
   files: {
     list: (sessionId) => ipcRenderer.invoke('files:list', sessionId),
     read: (path, sessionId) => ipcRenderer.invoke('files:read', path, sessionId),
+    save: (path, contents, sessionId) => ipcRenderer.invoke('files:save', path, contents, sessionId),
     getChangedFiles: (sessionId) => ipcRenderer.invoke('files:getChangedFiles', sessionId),
     getDiff: (filePath, sessionId) => ipcRenderer.invoke('files:getDiff', filePath, sessionId),
   },

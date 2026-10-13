@@ -104,4 +104,15 @@ describe('GitService', () => {
     await execute('git', ['commit', '-m', 'Add status fixture'], { cwd: repository })
     expect(await git.getRepositoryStatus(repository)).toMatchObject({ ahead: 1, behind: 0, isClean: true })
   })
+
+  it('fetches and prunes the origin remote', async () => {
+    const remote = join(fixtureRoot, 'remote.git')
+    await execute('git', ['init', '--bare', remote])
+    await execute('git', ['remote', 'add', 'origin', remote], { cwd: repository })
+    await execute('git', ['push', '--set-upstream', 'origin', 'main'], { cwd: repository })
+
+    await expect(git.fetchOrigin(repository)).resolves.toBeUndefined()
+    await execute('git', ['remote', 'remove', 'origin'], { cwd: repository })
+    await expect(git.fetchOrigin(repository)).rejects.toThrow('does not have an origin')
+  })
 })

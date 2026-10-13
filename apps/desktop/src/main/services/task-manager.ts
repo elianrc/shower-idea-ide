@@ -135,6 +135,14 @@ export class SessionManager {
     this.emit()
   }
 
+  async setChangedFiles(sessionId: string, changedFiles: Session['changedFiles']): Promise<Session> {
+    const session = await this.store.updateSession(sessionId, (current) => {
+      current.changedFiles = changedFiles
+    })
+    this.emit()
+    return session
+  }
+
   async sendMessage(sessionId: string, message: string): Promise<Session> {
     const followUp = message.trim()
     if (!followUp) throw new Error('Enter a message for the agent.')

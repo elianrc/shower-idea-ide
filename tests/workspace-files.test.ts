@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -48,6 +48,15 @@ describe('WorkspaceFilesService', () => {
     })
   })
 
+  it('saves text files while preserving workspace boundaries', async () => {
+    await expect(files.write(root, 'src/main.ts', 'export const ready = false\n')).resolves.toMatchObject({
+      path: 'src/main.ts',
+      contents: 'export const ready = false\n',
+    })
+    expect(await readFile(join(root, 'src', 'main.ts'), 'utf8')).toBe('export const ready = false\n')
+    await expect(files.write(root, '../outside.ts', 'unsafe')).rejects.toThrow('outside the workspace')
+  })
+
   it('lists tracked and untracked files while respecting Git ignores', async () => {
     await execute('git', ['init', '-b', 'main'], { cwd: root })
     await writeFile(join(root, '.gitignore'), 'ignored.txt\n', 'utf8')
@@ -68,6 +77,7 @@ describe('WorkspaceFilesService', () => {
       contents: '/private/etc/hosts',
       language: 'plaintext',
     })
+    await expect(files.write(root, 'hosts-link', 'unsafe')).rejects.toThrow('Symbolic links')
   })
 
   it('rejects binary file previews', async () => {

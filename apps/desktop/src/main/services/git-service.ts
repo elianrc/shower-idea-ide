@@ -77,6 +77,13 @@ export class GitService {
     }
   }
 
+  async fetchOrigin(repo: string): Promise<void> {
+    const remote = await this.git(repo, ['remote', 'get-url', 'origin'], true)
+    if (remote.code !== 0 || !remote.stdout.trim()) throw new Error('This repository does not have an origin remote.')
+    const result = await this.git(repo, ['fetch', '--prune', 'origin'], true)
+    if (result.code !== 0) throw new Error(result.stderr.trim() || 'Unable to fetch origin.')
+  }
+
   async listBranches(repo: string): Promise<BranchInfo[]> {
     const [currentResult, branchesResult, worktreesResult] = await Promise.all([
       this.git(repo, ['branch', '--show-current']),
