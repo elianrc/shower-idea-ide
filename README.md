@@ -37,6 +37,10 @@ Verification:
 npm run verify
 ```
 
+GitHub browser sign-in is optional. Official or self-hosted builds can configure
+it by following [the GitHub App setup guide](docs/github-app-setup.md). Vivlio
+keeps the GitHub client secret outside the open-source desktop bundle.
+
 ## Install on macOS
 
 Build the native app bundle, copy it to `/Applications`, and launch it:
