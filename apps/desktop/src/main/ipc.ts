@@ -75,6 +75,12 @@ export async function registerIpc(userDataPath: string): Promise<void> {
   ipcMain.handle('files:read', (_event, path: string, sessionId?: string) =>
     files.read(resolveWorkspacePath(store, sessionId), path),
   )
+  ipcMain.handle('files:getChangedFiles', (_event, sessionId?: string) =>
+    git.getChangedFiles(resolveWorkspacePath(store, sessionId)),
+  )
+  ipcMain.handle('files:getDiff', (_event, filePath?: string, sessionId?: string) =>
+    git.getDiff(sessionId ?? 'workspace', resolveWorkspacePath(store, sessionId), filePath),
+  )
   ipcMain.handle('sessions:create', (_event, input: CreateSessionInput) => sessions.create(input))
   ipcMain.handle('sessions:get', (_event, sessionId: string) => sessions.get(sessionId))
   ipcMain.handle('sessions:sendMessage', (_event, sessionId: string, message: string) =>

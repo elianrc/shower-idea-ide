@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   AlertCircle,
   ArrowLeft,
@@ -21,8 +21,7 @@ import type { Session, SessionActivity, VerificationResult } from '../../shared/
 import { useAppStore } from '../store'
 import { StatusPill } from './StatusPill'
 
-const DiffViewer = lazy(() => import('./DiffViewer'))
-type DetailTab = 'conversation' | 'changes' | 'checks'
+type DetailTab = 'conversation' | 'checks'
 
 export function SessionDetail({ session }: { session: Session }) {
   const selectSession = useAppStore((state) => state.selectSession)
@@ -85,9 +84,9 @@ export function SessionDetail({ session }: { session: Session }) {
       </header>
 
       <nav aria-label="Session detail" className="detail-tabs">
-        {(['conversation', 'changes', 'checks'] as const).map((item) => (
+        {(['conversation', 'checks'] as const).map((item) => (
           <button className={tab === item ? 'active' : ''} key={item} onClick={() => setTab(item)} type="button">
-            {item === 'conversation' ? 'Conversation' : item === 'changes' ? `Changes ${session.changedFiles.length ? `(${session.changedFiles.length})` : ''}` : 'Checks'}
+            {item === 'conversation' ? 'Conversation' : 'Checks'}
           </button>
         ))}
       </nav>
@@ -96,7 +95,6 @@ export function SessionDetail({ session }: { session: Session }) {
 
       <div className={`detail-content detail-${tab}`}>
         {tab === 'conversation' ? <Conversation activity={session.activity} /> : null}
-        {tab === 'changes' ? <ChangesView session={session} /> : null}
         {tab === 'checks' ? <ChecksView session={session} /> : null}
       </div>
 
@@ -219,28 +217,6 @@ function VerificationRow({ result }: { result: VerificationResult }) {
       <summary><Icon size={15} /><code>{result.command}</code>{result.durationMs ? <span>{(result.durationMs / 1000).toFixed(1)}s</span> : null}{result.output ? <ChevronDown size={13} /> : null}</summary>
       {result.output ? <pre>{result.output}</pre> : null}
     </details>
-  )
-}
-
-function ChangesView({ session }: { session: Session }) {
-  const [selected, setSelected] = useState<string | null>(null)
-  return (
-    <div className="changes-layout">
-      <aside className="changed-files-pane">
-        <div className="changed-files-heading">Changed files <span>{session.changedFiles.length}</span></div>
-        <button className={!selected ? 'changed-file active' : 'changed-file'} onClick={() => setSelected(null)} type="button"><FileCode2 size={14} /><span>All changes</span></button>
-        {session.changedFiles.map((file) => (
-          <button className={selected === file.path ? 'changed-file active' : 'changed-file'} key={file.path} onClick={() => setSelected(file.path)} type="button">
-            <span className={`file-status file-${file.status}`}>{file.status.slice(0, 1).toUpperCase()}</span><span>{file.path}</span>
-          </button>
-        ))}
-      </aside>
-      <section className="raw-diff-pane">
-        <Suspense fallback={<div className="loading-row">Loading code viewer…</div>}>
-          <DiffViewer filePath={selected ?? undefined} sessionId={session.id} />
-        </Suspense>
-      </section>
-    </div>
   )
 }
 

@@ -1,15 +1,12 @@
 import { useEffect, useState } from 'react'
-import Editor, { loader } from '@monaco-editor/react'
+import Editor from '@monaco-editor/react'
 import { AlertCircle, FileDiff, LoaderCircle } from 'lucide-react'
-import * as monaco from 'monaco-editor/editor/editor.api'
-import EditorWorker from 'monaco-editor/editor/editor.worker?worker'
 import type { SessionDiff } from '../../shared/types'
+import { monaco } from '../monaco'
 
-globalThis.MonacoEnvironment = {
-  getWorker: () => new EditorWorker(),
+if (!monaco.languages.getLanguages().some((language) => language.id === 'diff')) {
+  monaco.languages.register({ id: 'diff' })
 }
-loader.config({ monaco })
-monaco.languages.register({ id: 'diff' })
 monaco.languages.setMonarchTokensProvider('diff', {
   tokenizer: {
     root: [
@@ -23,7 +20,7 @@ monaco.languages.setMonarchTokensProvider('diff', {
   },
 })
 
-export default function DiffViewer({ sessionId, filePath }: { sessionId: string; filePath?: string }) {
+export default function DiffViewer({ sessionId, filePath }: { sessionId?: string; filePath?: string }) {
   const [diff, setDiff] = useState<SessionDiff | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -31,7 +28,7 @@ export default function DiffViewer({ sessionId, filePath }: { sessionId: string;
     let active = true
     setDiff(null)
     setError(null)
-    void window.vivlio.sessions.getDiff(sessionId, filePath).then(
+    void window.vivlio.files.getDiff(filePath, sessionId).then(
       (result) => { if (active) setDiff(result) },
       (reason: unknown) => { if (active) setError(reason instanceof Error ? reason.message : String(reason)) },
     )
@@ -50,15 +47,15 @@ export default function DiffViewer({ sessionId, filePath }: { sessionId: string;
             base: 'vs-dark',
             inherit: true,
             rules: [
-              { token: 'string.diff', foreground: 'A9DBC1' },
-              { token: 'keyword.diff', foreground: 'D4A7C9' },
+              { token: 'string.diff', foreground: 'C8C8C8' },
+              { token: 'keyword.diff', foreground: '9A9A9A' },
             ],
             colors: {
-              'editor.background': '#0d1011',
-              'editor.foreground': '#c7cdca',
-              'editorLineNumber.foreground': '#4f5a56',
-              'editorGutter.background': '#0d1011',
-              'editor.selectionBackground': '#29443a88',
+              'editor.background': '#050505',
+              'editor.foreground': '#c7c7c7',
+              'editorLineNumber.foreground': '#454545',
+              'editorGutter.background': '#050505',
+              'editor.selectionBackground': '#33333388',
             },
           })
         }}

@@ -28,7 +28,6 @@ export function RepositoryBar({ project, selectedSession }: { project: Project; 
   const switchBranch = useAppStore((state) => state.switchBranch)
   const createBranch = useAppStore((state) => state.createBranch)
   const selectSession = useAppStore((state) => state.selectSession)
-  const setView = useAppStore((state) => state.setView)
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null)
   const [branchQuery, setBranchQuery] = useState('')
   const [isCreatingBranch, setCreatingBranch] = useState(false)
@@ -74,7 +73,7 @@ export function RepositoryBar({ project, selectedSession }: { project: Project; 
     if (sessionId) {
       selectSession(sessionId)
     } else {
-      setView('sessions')
+      selectSession(null)
     }
   }
 

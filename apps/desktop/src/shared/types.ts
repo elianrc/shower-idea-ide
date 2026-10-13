@@ -137,6 +137,8 @@ export interface AppApi {
   files: {
     list(sessionId?: string): Promise<WorkspaceFileNode[]>
     read(path: string, sessionId?: string): Promise<SourceFile>
+    getChangedFiles(sessionId?: string): Promise<ChangedFile[]>
+    getDiff(filePath?: string, sessionId?: string): Promise<SessionDiff>
   }
   sessions: {
     create(input: CreateSessionInput): Promise<Session>

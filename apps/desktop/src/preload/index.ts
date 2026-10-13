@@ -17,6 +17,8 @@ const api: AppApi = {
   files: {
     list: (sessionId) => ipcRenderer.invoke('files:list', sessionId),
     read: (path, sessionId) => ipcRenderer.invoke('files:read', path, sessionId),
+    getChangedFiles: (sessionId) => ipcRenderer.invoke('files:getChangedFiles', sessionId),
+    getDiff: (filePath, sessionId) => ipcRenderer.invoke('files:getDiff', filePath, sessionId),
   },
   sessions: {
     create: (input: CreateSessionInput) => ipcRenderer.invoke('sessions:create', input),

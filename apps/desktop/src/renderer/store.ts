@@ -1,13 +1,10 @@
 import { create } from 'zustand'
 import type { BranchInfo, CreateSessionInput, RepositoryStatus, Session, WorkspaceSnapshot } from '../shared/types'
 
-type View = 'sessions' | 'changes' | 'history' | 'code'
-
 interface AppState extends WorkspaceSnapshot {
   isLoading: boolean
   error: string | null
   selectedSessionId: string | null
-  view: View
   isNewSessionOpen: boolean
   branches: BranchInfo[]
   repositoryStatus: RepositoryStatus | null
@@ -20,7 +17,6 @@ interface AppState extends WorkspaceSnapshot {
   createBranch(name: string, baseBranch?: string): Promise<boolean>
   createSession(input: CreateSessionInput): Promise<Session | null>
   selectSession(sessionId: string | null): void
-  setView(view: View): void
   setNewSessionOpen(open: boolean): void
   clearError(): void
 }
@@ -36,7 +32,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   isLoading: true,
   error: null,
   selectedSessionId: null,
-  view: 'sessions',
   isNewSessionOpen: false,
   branches: [],
   repositoryStatus: null,
@@ -75,7 +70,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             window.vivlio.workspace.getRepositoryStatus(),
           ])
         : [[], null]
-      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedSessionId: null, view: 'sessions' })
+      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedSessionId: null })
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
     }
@@ -90,7 +85,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         window.vivlio.branches.list(),
         window.vivlio.workspace.getRepositoryStatus(),
       ])
-      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedSessionId: null, view: 'sessions' })
+      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedSessionId: null })
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
     }
@@ -122,7 +117,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         window.vivlio.branches.list(),
         window.vivlio.workspace.getRepositoryStatus(),
       ])
-      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedSessionId: null, view: 'sessions' })
+      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedSessionId: null })
       return true
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
@@ -138,7 +133,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         window.vivlio.branches.list(),
         window.vivlio.workspace.getRepositoryStatus(),
       ])
-      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedSessionId: null, view: 'sessions' })
+      set({ ...snapshot, branches, repositoryStatus, isLoading: false, selectedSessionId: null })
       return true
     } catch (error) {
       set({ error: errorMessage(error), isLoading: false })
@@ -161,10 +156,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectSession(selectedSessionId) {
     set({ selectedSessionId })
     void get().refreshRepositoryStatus(selectedSessionId ?? undefined)
-  },
-  setView(view) {
-    set({ view, selectedSessionId: null })
-    void get().refreshRepositoryStatus()
   },
   setNewSessionOpen: (isNewSessionOpen) => set({ isNewSessionOpen }),
   clearError: () => set({ error: null }),
