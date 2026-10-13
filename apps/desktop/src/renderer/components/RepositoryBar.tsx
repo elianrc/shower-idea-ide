@@ -9,7 +9,6 @@ import {
   LoaderCircle,
   Plus,
   Search,
-  Settings2,
   X,
 } from 'lucide-react'
 import type { BranchInfo, Project, Session } from '../../shared/types'
@@ -311,7 +310,6 @@ export function RepositoryBar({ project, selectedSession }: { project: Project; 
         <span><strong>Fetch origin</strong><small>{syncDetail}</small></span>
         {repositoryStatus && !repositoryStatus.isClean ? <i aria-label="Uncommitted local changes" /> : null}
       </button>
-      <button aria-label="Settings" className="toolbar-icon-button" type="button"><Settings2 size={17} /></button>
     </header>
   )
 }
