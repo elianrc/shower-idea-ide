@@ -16,6 +16,10 @@ interface AppState extends WorkspaceSnapshot {
   switchBranch(name: string): Promise<boolean>
   createBranch(name: string, baseBranch?: string): Promise<boolean>
   createSession(input: CreateSessionInput): Promise<Session | null>
+  renameSession(sessionId: string, title: string): Promise<boolean>
+  deleteSession(sessionId: string): Promise<boolean>
+  setSessionPinned(sessionId: string, isPinned: boolean): Promise<boolean>
+  setSessionUnread(sessionId: string, isUnread: boolean): Promise<boolean>
   selectSession(sessionId: string | null): void
   setNewSessionOpen(open: boolean): void
   clearError(): void
@@ -153,8 +157,51 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
+  async renameSession(sessionId, title) {
+    try {
+      await window.vivlio.sessions.rename(sessionId, title)
+      return true
+    } catch (error) {
+      set({ error: errorMessage(error) })
+      return false
+    }
+  },
+
+  async deleteSession(sessionId) {
+    try {
+      await window.vivlio.sessions.delete(sessionId)
+      if (get().selectedSessionId === sessionId) set({ selectedSessionId: null })
+      return true
+    } catch (error) {
+      set({ error: errorMessage(error) })
+      return false
+    }
+  },
+
+  async setSessionPinned(sessionId, isPinned) {
+    try {
+      await window.vivlio.sessions.setPinned(sessionId, isPinned)
+      return true
+    } catch (error) {
+      set({ error: errorMessage(error) })
+      return false
+    }
+  },
+
+  async setSessionUnread(sessionId, isUnread) {
+    try {
+      await window.vivlio.sessions.setUnread(sessionId, isUnread)
+      return true
+    } catch (error) {
+      set({ error: errorMessage(error) })
+      return false
+    }
+  },
+
   selectSession(selectedSessionId) {
     set({ selectedSessionId })
+    const session = selectedSessionId ? get().sessions.find((candidate) => candidate.id === selectedSessionId) : null
+    if (session?.isUnread) void get().setSessionUnread(session.id, false)
     void get().refreshRepositoryStatus(selectedSessionId ?? undefined)
   },
   setNewSessionOpen: (isNewSessionOpen) => set({ isNewSessionOpen }),
