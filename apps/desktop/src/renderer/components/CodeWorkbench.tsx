@@ -106,12 +106,19 @@ export function CodeWorkbench({ project, session }: { project: Project; session:
     }
   }, [draftContents, isSavingSource, sessionId, setRepositoryStatus, source])
 
+  const commitChanges = useCallback(async (summary: string, description: string) => {
+    const result = await window.vivlio.workspace.commit(summary, description, sessionId)
+    setRepositoryChanges(result.changedFiles)
+    setSelectedDiffPath(result.changedFiles[0]?.path ?? null)
+    setRepositoryStatus(result.repositoryStatus)
+  }, [sessionId, setRepositoryStatus])
+
   return (
     <section className="code-workbench">
       <header className="workbench-header">
         <div aria-label="Code workbench mode" className="workbench-toggle" role="tablist">
           <button aria-selected={mode === 'diff'} className={mode === 'diff' ? 'active' : ''} onClick={() => setMode('diff')} role="tab" type="button">
-            Diff{changedFiles.length > 0 ? <span>{changedFiles.length}</span> : null}
+            Changes{changedFiles.length > 0 ? <span>{changedFiles.length}</span> : null}
           </button>
           <button aria-selected={mode === 'code'} className={mode === 'code' ? 'active' : ''} onClick={() => setMode('code')} role="tab" type="button">
             Code
@@ -122,7 +129,9 @@ export function CodeWorkbench({ project, session }: { project: Project; session:
 
       {mode === 'diff' ? (
         <DiffWorkbench
+          branch={session?.branch ?? project.branch}
           changedFiles={changedFiles}
+          onCommit={commitChanges}
           selectedPath={selectedDiffPath}
           sessionId={sessionId}
           setSelectedPath={setSelectedDiffPath}
@@ -149,24 +158,48 @@ export function CodeWorkbench({ project, session }: { project: Project; session:
 }
 
 function DiffWorkbench({
+  branch,
   changedFiles,
+  onCommit,
   selectedPath,
   sessionId,
   setSelectedPath,
 }: {
+  branch: string
   changedFiles: ChangedFile[]
+  onCommit(summary: string, description: string): Promise<void>
   selectedPath: string | null
   sessionId?: string
   setSelectedPath(path: string): void
 }) {
+  const [summary, setSummary] = useState('')
+  const [description, setDescription] = useState('')
+  const [isCommitting, setCommitting] = useState(false)
+  const [commitError, setCommitError] = useState<string | null>(null)
+
   if (changedFiles.length === 0) {
-    return <EmptyWorkbench icon={<FileDiff size={22} />} title="No modified files" copy="Changes made in this workspace will appear here." />
+    return <EmptyWorkbench icon={<FileDiff size={22} />} title="No changes" copy="Changes made in this workspace will appear here." />
+  }
+
+  const submitCommit = async () => {
+    if (!summary.trim() || isCommitting) return
+    setCommitting(true)
+    setCommitError(null)
+    try {
+      await onCommit(summary.trim(), description.trim())
+      setSummary('')
+      setDescription('')
+    } catch (reason) {
+      setCommitError(errorMessage(reason))
+    } finally {
+      setCommitting(false)
+    }
   }
 
   return (
     <div className="workbench-body">
       <aside className="workbench-navigator diff-navigator">
-        <div className="navigator-heading"><span>Modified files</span><span>{changedFiles.length}</span></div>
+        <div className="navigator-heading"><span>Changed files</span><span>{changedFiles.length}</span></div>
         <div className="modified-file-list">
           {changedFiles.map((file) => (
             <button className={selectedPath === file.path ? 'modified-file active' : 'modified-file'} key={file.path} onClick={() => setSelectedPath(file.path)} type="button">
@@ -176,6 +209,26 @@ function DiffWorkbench({
             </button>
           ))}
         </div>
+        <form className="commit-panel" onSubmit={(event) => { event.preventDefault(); void submitCommit() }}>
+          <input
+            aria-label="Commit summary"
+            maxLength={120}
+            onChange={(event) => setSummary(event.target.value)}
+            placeholder="Summary (required)"
+            value={summary}
+          />
+          <textarea
+            aria-label="Commit description"
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Description"
+            rows={3}
+            value={description}
+          />
+          {commitError ? <p role="alert">{commitError}</p> : null}
+          <button disabled={!summary.trim() || isCommitting} type="submit">
+            {isCommitting ? 'Committing…' : `Commit to ${branch}`}
+          </button>
+        </form>
       </aside>
       <section className="workbench-preview">
         <PreviewHeader path={selectedPath} />

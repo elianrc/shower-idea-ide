@@ -69,11 +69,6 @@ export function SessionDetail({ session }: { session: Session }) {
               <Play size={14} /> Run checks
             </button>
           ) : null}
-          {!isRunning && session.status !== 'completed' && session.changedFiles.length > 0 ? (
-            <button className="primary-button" disabled={busy} onClick={() => void run(() => window.vivlio.sessions.commit(session.id))} type="button">
-              <GitCommitHorizontal size={15} /> Commit changes
-            </button>
-          ) : null}
           {session.status === 'completed' ? <span className="commit-badge"><GitCommitHorizontal size={15} />{session.commit}</span> : null}
         </div>
       </header>

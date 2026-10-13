@@ -508,7 +508,7 @@ h1, h2, h3 { font-family: 'Libron', Georgia, 'Times New Roman', serif; }
 .chat-verification-row details pre { grid-column: 1 / -1; max-height: 190px; margin: 0 -11px; overflow: auto; padding: 11px; border-top: 1px solid #202020; color: #999; background: #050505; font-size: 8px; line-height: 1.5; white-space: pre-wrap; }
 .status-starting, .status-running, .status-verifying, .status-waiting, .status-completed, .status-stopped { color: #d0d0d0; background: #202020; }
 
-/* Read-only code workbench */
+/* Code workbench */
 .main-split, .workbench-panel, .session-panel, .session-workspace { min-width: 0; min-height: 0; height: 100%; }
 .session-workspace { display: flex; flex-direction: column; background: #000; }
 .main-split-separator { position: relative; width: 1px; background: #242424; outline: 0; }
@@ -539,7 +539,8 @@ h1, h2, h3 { font-family: 'Libron', Georgia, 'Times New Roman', serif; }
 .workbench-editor { position: relative; min-width: 0; min-height: 0; flex: 1; overflow: hidden; }
 .source-editor-shell, .workbench-editor > .diff-editor-shell { height: 100%; }
 
-.modified-file-list { height: calc(100% - 34px); overflow: auto; padding: 4px 0; }
+.diff-navigator { display: flex; flex-direction: column; }
+.modified-file-list { min-height: 0; flex: 1; overflow: auto; padding: 4px 0; }
 .modified-file { display: grid; width: 100%; min-width: 0; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 7px 9px; border: 0; color: #777; background: transparent; text-align: left; cursor: pointer; }
 .modified-file:hover, .modified-file.active { color: #eee; background: #151515; }
 .change-letter { color: #aaa; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 8px; text-align: center; }
@@ -549,6 +550,16 @@ h1, h2, h3 { font-family: 'Libron', Georgia, 'Times New Roman', serif; }
 .modified-file-copy small { color: #555; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 7px; }
 .file-stats { display: flex; flex-direction: column; gap: 2px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 7px; font-style: normal; text-align: right; }
 .file-stats i, .file-stats b { color: #777; font-style: normal; font-weight: 400; }
+.commit-panel { display: flex; flex: 0 0 auto; flex-direction: column; gap: 7px; padding: 10px; border-top: 1px solid #242424; background: #090909; }
+.commit-panel input, .commit-panel textarea { width: 100%; border: 1px solid #292929; border-radius: 4px; outline: 0; color: #ddd; background: #101010; font: inherit; font-size: 9px; }
+.commit-panel input { height: 30px; padding: 0 9px; }
+.commit-panel textarea { min-height: 54px; padding: 8px 9px; line-height: 1.45; resize: none; }
+.commit-panel input:focus, .commit-panel textarea:focus { border-color: #555; }
+.commit-panel input::placeholder, .commit-panel textarea::placeholder { color: #555; }
+.commit-panel p { max-height: 44px; margin: 0; overflow: auto; color: #aaa; font-size: 8px; line-height: 1.4; }
+.commit-panel button { min-height: 30px; padding: 0 9px; overflow: hidden; border: 1px solid #e4e4e4; border-radius: 4px; color: #050505; background: #e4e4e4; font-size: 9px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.commit-panel button:hover:not(:disabled) { border-color: #fff; background: #fff; }
+.commit-panel button:disabled { border-color: #222; color: #555; background: #151515; cursor: default; }
 
 .file-tree-shell, .file-tree { height: calc(100% - 34px); min-height: 0; }
 .file-tree { height: 100%; }
