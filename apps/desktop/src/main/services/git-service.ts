@@ -88,7 +88,7 @@ export class GitService {
       const detail = result.stderr.trim()
       const needsAuthentication = /authentication failed|could not read (?:username|password)|terminal prompts disabled/i.test(detail)
       throw new Error(needsAuthentication
-        ? 'GitHub authentication is required. Sign in with GitHub CLI or configure a credential helper, then fetch again.'
+        ? 'GitHub sign-in required. Install GitHub CLI and run “gh auth login” in Terminal, then fetch again.'
         : detail || 'Unable to fetch origin.')
     }
   }

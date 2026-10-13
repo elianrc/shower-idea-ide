@@ -130,7 +130,7 @@ describe('GitService', () => {
     }
     const authenticatedGit = new GitService(processes as unknown as ProcessManager)
 
-    await expect(authenticatedGit.fetchOrigin(repository)).rejects.toThrow('GitHub authentication is required')
+    await expect(authenticatedGit.fetchOrigin(repository)).rejects.toThrow('GitHub sign-in required')
     expect(processes.run).toHaveBeenLastCalledWith('git', ['fetch', '--prune', 'origin'], {
       cwd: repository,
       env: { GCM_INTERACTIVE: 'Never', GIT_TERMINAL_PROMPT: '0' },

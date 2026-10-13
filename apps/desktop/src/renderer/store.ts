@@ -28,7 +28,8 @@ interface AppState extends WorkspaceSnapshot {
 }
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
+  const message = error instanceof Error ? error.message : String(error)
+  return message.replace(/^Error invoking remote method '[^']+': Error: /, '')
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
