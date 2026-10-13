@@ -17,6 +17,9 @@ function findProtocolUrl(values: string[]): string | undefined {
   return values.find((value) => value.startsWith('vivlio://'))
 }
 
+const initialProtocolUrl = findProtocolUrl(process.argv)
+if (initialProtocolUrl) pendingOpenUrls.push(initialProtocolUrl)
+
 function focusMainWindow(): void {
   const window = BrowserWindow.getAllWindows()[0]
   if (!window) return

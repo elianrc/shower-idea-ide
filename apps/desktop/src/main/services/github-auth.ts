@@ -86,9 +86,8 @@ export class GitHubAuthService {
 
     try {
       await shell.openExternal(authorizeUrl.toString())
-    } catch (error) {
+    } catch {
       this.rejectPending(new Error('Unable to open GitHub sign-in in your browser.'))
-      throw error
     }
     return result
   }
