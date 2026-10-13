@@ -48,6 +48,8 @@ function makeSession(providerSessionId?: string): Session {
     id: 'session-1',
     projectId: 'project-1',
     title: 'Inspect the project',
+    isPinned: false,
+    isUnread: false,
     initialPrompt: 'Inspect the project',
     status: 'running',
     branch: 'main',

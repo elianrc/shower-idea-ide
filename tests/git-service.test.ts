@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -59,6 +59,9 @@ describe('GitService', () => {
     const revision = await git.commit(worktree, 'Add greeting')
     expect(revision).toMatch(/^[a-f0-9]{7,}$/)
     expect(await git.getChangedFiles(worktree)).toEqual([])
+
+    await git.removeWorktree(repository, worktree)
+    await expect(access(worktree)).rejects.toThrow()
   })
 
   it('creates and switches branches while protecting local changes', async () => {

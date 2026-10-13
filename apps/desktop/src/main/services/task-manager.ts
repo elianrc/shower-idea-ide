@@ -50,6 +50,8 @@ export class SessionManager {
       id,
       projectId: project.id,
       title: makeTitle(prompt),
+      isPinned: false,
+      isUnread: false,
       initialPrompt: prompt,
       status: 'starting',
       branch,
@@ -89,6 +91,48 @@ export class SessionManager {
     } catch (error) {
       return this.failSession(id, error)
     }
+  }
+
+  async rename(sessionId: string, title: string): Promise<Session> {
+    const nextTitle = title.trim()
+    if (!nextTitle) throw new Error('Enter a session title.')
+    if (nextTitle.length > 120) throw new Error('Session titles must be 120 characters or fewer.')
+    const session = await this.store.updateSession(sessionId, (current) => {
+      current.title = nextTitle
+    }, { touch: false })
+    this.emit()
+    return session
+  }
+
+  async setPinned(sessionId: string, isPinned: boolean): Promise<Session> {
+    const session = await this.store.updateSession(sessionId, (current) => {
+      current.isPinned = isPinned
+    }, { touch: false })
+    this.emit()
+    return session
+  }
+
+  async setUnread(sessionId: string, isUnread: boolean): Promise<Session> {
+    const session = await this.store.updateSession(sessionId, (current) => {
+      current.isUnread = isUnread
+    }, { touch: false })
+    this.emit()
+    return session
+  }
+
+  async delete(sessionId: string): Promise<void> {
+    const session = this.requireSession(sessionId)
+    this.agent.cancel(sessionId)
+    this.processes.cancel(`verify:${sessionId}`)
+
+    if (session.workspaceMode === 'worktree') {
+      const project = this.store.getProjectById(session.projectId)
+      if (!project) throw new Error('The repository for this session is no longer available.')
+      await this.git.removeWorktree(project.path, session.workspacePath)
+    }
+
+    await this.store.removeSession(sessionId)
+    this.emit()
   }
 
   async sendMessage(sessionId: string, message: string): Promise<Session> {

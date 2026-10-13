@@ -23,6 +23,10 @@ const api: AppApi = {
   sessions: {
     create: (input: CreateSessionInput) => ipcRenderer.invoke('sessions:create', input),
     get: (sessionId) => ipcRenderer.invoke('sessions:get', sessionId),
+    rename: (sessionId, title) => ipcRenderer.invoke('sessions:rename', sessionId, title),
+    delete: (sessionId) => ipcRenderer.invoke('sessions:delete', sessionId),
+    setPinned: (sessionId, isPinned) => ipcRenderer.invoke('sessions:setPinned', sessionId, isPinned),
+    setUnread: (sessionId, isUnread) => ipcRenderer.invoke('sessions:setUnread', sessionId, isUnread),
     sendMessage: (sessionId, message) => ipcRenderer.invoke('sessions:sendMessage', sessionId, message),
     stop: (sessionId) => ipcRenderer.invoke('sessions:stop', sessionId),
     runVerification: (sessionId) => ipcRenderer.invoke('sessions:runVerification', sessionId),

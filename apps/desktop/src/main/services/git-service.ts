@@ -36,6 +36,13 @@ export class GitService {
     if (result.code !== 0) throw new Error(result.stderr.trim() || 'Unable to create the task worktree.')
   }
 
+  async removeWorktree(repo: string, path: string): Promise<void> {
+    const result = await this.git(repo, ['worktree', 'remove', '--force', path], true)
+    if (result.code !== 0 && !result.stderr.includes('is not a working tree')) {
+      throw new Error(result.stderr.trim() || 'Unable to remove the session worktree.')
+    }
+  }
+
   async getRepositoryStatus(repo: string): Promise<RepositoryStatus> {
     const [rootResult, branchResult, statusResult, remoteResult, upstreamResult] = await Promise.all([
       this.git(repo, ['rev-parse', '--show-toplevel']),

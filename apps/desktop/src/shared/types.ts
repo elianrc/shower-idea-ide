@@ -66,6 +66,8 @@ export interface Session {
   id: string
   projectId: string
   title: string
+  isPinned: boolean
+  isUnread: boolean
   initialPrompt: string
   status: SessionStatus
   branch: string
@@ -143,6 +145,10 @@ export interface AppApi {
   sessions: {
     create(input: CreateSessionInput): Promise<Session>
     get(sessionId: string): Promise<Session | null>
+    rename(sessionId: string, title: string): Promise<Session>
+    delete(sessionId: string): Promise<void>
+    setPinned(sessionId: string, isPinned: boolean): Promise<Session>
+    setUnread(sessionId: string, isUnread: boolean): Promise<Session>
     sendMessage(sessionId: string, message: string): Promise<Session>
     stop(sessionId: string): Promise<Session>
     runVerification(sessionId: string): Promise<Session>

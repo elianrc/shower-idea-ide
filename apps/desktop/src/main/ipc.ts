@@ -83,6 +83,10 @@ export async function registerIpc(userDataPath: string): Promise<void> {
   )
   ipcMain.handle('sessions:create', (_event, input: CreateSessionInput) => sessions.create(input))
   ipcMain.handle('sessions:get', (_event, sessionId: string) => sessions.get(sessionId))
+  ipcMain.handle('sessions:rename', (_event, sessionId: string, title: string) => sessions.rename(sessionId, title))
+  ipcMain.handle('sessions:delete', (_event, sessionId: string) => sessions.delete(sessionId))
+  ipcMain.handle('sessions:setPinned', (_event, sessionId: string, isPinned: boolean) => sessions.setPinned(sessionId, isPinned))
+  ipcMain.handle('sessions:setUnread', (_event, sessionId: string, isUnread: boolean) => sessions.setUnread(sessionId, isUnread))
   ipcMain.handle('sessions:sendMessage', (_event, sessionId: string, message: string) =>
     sessions.sendMessage(sessionId, message),
   )
