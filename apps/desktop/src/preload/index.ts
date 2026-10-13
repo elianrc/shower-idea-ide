@@ -14,6 +14,10 @@ const api: AppApi = {
     switch: (name) => ipcRenderer.invoke('branches:switch', name),
     create: (name, baseBranch) => ipcRenderer.invoke('branches:create', name, baseBranch),
   },
+  files: {
+    list: (sessionId) => ipcRenderer.invoke('files:list', sessionId),
+    read: (path, sessionId) => ipcRenderer.invoke('files:read', path, sessionId),
+  },
   sessions: {
     create: (input: CreateSessionInput) => ipcRenderer.invoke('sessions:create', input),
     get: (sessionId) => ipcRenderer.invoke('sessions:get', sessionId),

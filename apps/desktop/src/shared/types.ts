@@ -105,6 +105,22 @@ export interface SessionDiff {
   files: ChangedFile[]
 }
 
+export interface WorkspaceFileNode {
+  id: string
+  name: string
+  path: string
+  kind: 'file' | 'directory'
+  children?: WorkspaceFileNode[]
+}
+
+export interface SourceFile {
+  path: string
+  name: string
+  contents: string
+  language: string
+  size: number
+}
+
 export interface AppApi {
   workspace: {
     getSnapshot(): Promise<WorkspaceSnapshot>
@@ -117,6 +133,10 @@ export interface AppApi {
     list(): Promise<BranchInfo[]>
     switch(name: string): Promise<WorkspaceSnapshot>
     create(name: string, baseBranch?: string): Promise<WorkspaceSnapshot>
+  }
+  files: {
+    list(sessionId?: string): Promise<WorkspaceFileNode[]>
+    read(path: string, sessionId?: string): Promise<SourceFile>
   }
   sessions: {
     create(input: CreateSessionInput): Promise<Session>

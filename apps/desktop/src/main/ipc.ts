@@ -7,6 +7,7 @@ import { GitService } from './services/git-service'
 import { ProcessManager } from './services/process-manager'
 import { WorkspaceStore } from './services/store'
 import { SessionManager } from './services/task-manager'
+import { WorkspaceFilesService } from './services/workspace-files'
 
 export async function registerIpc(userDataPath: string): Promise<void> {
   const store = new WorkspaceStore(join(userDataPath, 'workspace.json'))
@@ -14,6 +15,7 @@ export async function registerIpc(userDataPath: string): Promise<void> {
   const processes = new ProcessManager()
   const git = new GitService(processes)
   const agent = new CodexAdapter(processes)
+  const files = new WorkspaceFilesService(processes)
   const broadcast = (snapshot: WorkspaceSnapshot) => {
     for (const window of BrowserWindow.getAllWindows()) {
       window.webContents.send('workspace:changed', snapshot)
@@ -67,6 +69,12 @@ export async function registerIpc(userDataPath: string): Promise<void> {
     await git.createBranch(project.path, name, baseBranch)
     return openRepository(project.path, store, git, broadcast)
   })
+  ipcMain.handle('files:list', (_event, sessionId?: string) =>
+    files.list(resolveWorkspacePath(store, sessionId)),
+  )
+  ipcMain.handle('files:read', (_event, path: string, sessionId?: string) =>
+    files.read(resolveWorkspacePath(store, sessionId), path),
+  )
   ipcMain.handle('sessions:create', (_event, input: CreateSessionInput) => sessions.create(input))
   ipcMain.handle('sessions:get', (_event, sessionId: string) => sessions.get(sessionId))
   ipcMain.handle('sessions:sendMessage', (_event, sessionId: string, message: string) =>
@@ -82,6 +90,14 @@ function requireProject(store: WorkspaceStore): Project {
   const project = store.getProject()
   if (!project) throw new Error('Open a Git repository first.')
   return project
+}
+
+function resolveWorkspacePath(store: WorkspaceStore, sessionId?: string): string {
+  const project = requireProject(store)
+  if (!sessionId) return project.path
+  const session = store.getSession(sessionId)
+  if (!session || session.projectId !== project.id) throw new Error('That session is not part of the current repository.')
+  return session.workspacePath
 }
 
 async function openRepository(
