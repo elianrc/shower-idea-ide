@@ -13,6 +13,8 @@ interface AppState extends WorkspaceSnapshot {
   selectRepository(projectId: string): Promise<void>
   refreshBranches(): Promise<void>
   refreshRepositoryStatus(sessionId?: string): Promise<void>
+  fetchOrigin(sessionId?: string): Promise<boolean>
+  setRepositoryStatus(status: RepositoryStatus): void
   switchBranch(name: string): Promise<boolean>
   createBranch(name: string, baseBranch?: string): Promise<boolean>
   createSession(input: CreateSessionInput): Promise<Session | null>
@@ -112,6 +114,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({ repositoryStatus: null })
     }
   },
+
+  async fetchOrigin(sessionId) {
+    try {
+      set({ repositoryStatus: await window.vivlio.workspace.fetchOrigin(sessionId) })
+      return true
+    } catch (error) {
+      set({ error: errorMessage(error) })
+      return false
+    }
+  },
+
+  setRepositoryStatus: (repositoryStatus) => set({ repositoryStatus }),
 
   async switchBranch(name) {
     set({ isLoading: true, error: null })

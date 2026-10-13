@@ -1,7 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronDown, ChevronRight, FileCode2, FileDiff, FileText, Folder, FolderOpen, LoaderCircle } from 'lucide-react'
+import { ChevronDown, ChevronRight, FileCode2, FileDiff, FileText, Folder, FolderOpen, LoaderCircle, Save } from 'lucide-react'
 import { Tree, type NodeRendererProps } from 'react-arborist'
 import type { ChangedFile, Project, Session, SourceFile, WorkspaceFileNode } from '../../shared/types'
+import { useAppStore } from '../store'
 
 const DiffViewer = lazy(() => import('./DiffViewer'))
 const SourceViewer = lazy(() => import('./SourceViewer'))
@@ -11,30 +12,34 @@ type WorkbenchMode = 'diff' | 'code'
 export function CodeWorkbench({ project, session }: { project: Project; session: Session | null }) {
   const sessionId = session?.id
   const workspaceKey = sessionId ?? `project:${project.id}`
-  const sessionChangeKey = session?.changedFiles
-    .map((file) => `${file.path}:${file.status}:${file.additions}:${file.deletions}`)
-    .join('|') ?? ''
+  const setRepositoryStatus = useAppStore((state) => state.setRepositoryStatus)
   const [mode, setMode] = useState<WorkbenchMode>(session?.changedFiles.length ? 'diff' : 'code')
   const [tree, setTree] = useState<WorkspaceFileNode[]>([])
   const [repositoryChanges, setRepositoryChanges] = useState<ChangedFile[]>([])
   const [selectedDiffPath, setSelectedDiffPath] = useState<string | null>(session?.changedFiles[0]?.path ?? null)
   const [source, setSource] = useState<SourceFile | null>(null)
+  const [draftContents, setDraftContents] = useState<string | null>(null)
   const [selectedSourcePath, setSelectedSourcePath] = useState<string | null>(null)
   const [isLoadingTree, setLoadingTree] = useState(true)
   const [isLoadingSource, setLoadingSource] = useState(false)
+  const [isSavingSource, setSavingSource] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const changedFiles = session ? session.changedFiles : repositoryChanges
+  const changedFilesKey = changedFiles
+    .map((file) => `${file.path}:${file.status}:${file.additions}:${file.deletions}`)
+    .join('|')
+  const isSourceDirty = Boolean(source && draftContents !== null && draftContents !== source.contents)
 
   useEffect(() => {
     let active = true
     setLoadingTree(true)
     setError(null)
     setSource(null)
+    setDraftContents(null)
     setSelectedSourcePath(null)
 
-    const requests = [window.vivlio.files.list(sessionId)] as const
     void Promise.all([
-      requests[0],
+      window.vivlio.files.list(sessionId),
       session ? Promise.resolve(session.changedFiles) : window.vivlio.files.getChangedFiles(),
     ]).then(
       ([nextTree, nextChanges]) => {
@@ -50,27 +55,56 @@ export function CodeWorkbench({ project, session }: { project: Project; session:
       },
     )
     return () => { active = false }
-  }, [project.id, sessionId, sessionChangeKey])
+  }, [project.id, sessionId])
+
+  useEffect(() => {
+    setMode(session?.changedFiles.length ? 'diff' : 'code')
+  }, [workspaceKey])
 
   useEffect(() => {
     const firstChangedPath = changedFiles[0]?.path ?? null
     setSelectedDiffPath((current) => current && changedFiles.some((file) => file.path === current) ? current : firstChangedPath)
-    setMode(changedFiles.length > 0 ? 'diff' : 'code')
-  }, [workspaceKey, sessionChangeKey, repositoryChanges])
+  }, [changedFilesKey])
 
   const openSource = useCallback(async (path: string) => {
+    if (source && draftContents !== null && draftContents !== source.contents && source.path !== path) {
+      if (!window.confirm('Discard the unsaved changes in this file?')) return
+    }
     setSelectedSourcePath(path)
     setLoadingSource(true)
     setError(null)
     try {
-      setSource(await window.vivlio.files.read(path, sessionId))
+      const nextSource = await window.vivlio.files.read(path, sessionId)
+      setSource(nextSource)
+      setDraftContents(nextSource.contents)
     } catch (reason) {
       setSource(null)
+      setDraftContents(null)
       setError(errorMessage(reason))
     } finally {
       setLoadingSource(false)
     }
-  }, [sessionId])
+  }, [draftContents, sessionId, source])
+
+  const saveSource = useCallback(async () => {
+    if (!source || draftContents === null || draftContents === source.contents || isSavingSource) return
+    setSavingSource(true)
+    setError(null)
+    try {
+      const result = await window.vivlio.files.save(source.path, draftContents, sessionId)
+      setSource(result.file)
+      setDraftContents(result.file.contents)
+      setRepositoryChanges(result.changedFiles)
+      setSelectedDiffPath((current) => current && result.changedFiles.some((file) => file.path === current)
+        ? current
+        : result.changedFiles[0]?.path ?? null)
+      setRepositoryStatus(result.repositoryStatus)
+    } catch (reason) {
+      setError(errorMessage(reason))
+    } finally {
+      setSavingSource(false)
+    }
+  }, [draftContents, isSavingSource, sessionId, setRepositoryStatus, source])
 
   return (
     <section className="code-workbench">
@@ -96,9 +130,14 @@ export function CodeWorkbench({ project, session }: { project: Project; session:
       ) : (
         <CodeExplorer
           error={error}
+          draftContents={draftContents}
+          isDirty={isSourceDirty}
           isLoadingSource={isLoadingSource}
           isLoadingTree={isLoadingTree}
+          isSavingSource={isSavingSource}
+          onChange={setDraftContents}
           onOpen={openSource}
+          onSave={saveSource}
           selectedPath={selectedSourcePath}
           source={source}
           tree={tree}
@@ -151,19 +190,29 @@ function DiffWorkbench({
 }
 
 function CodeExplorer({
+  draftContents,
   error,
+  isDirty,
   isLoadingSource,
   isLoadingTree,
+  isSavingSource,
+  onChange,
   onOpen,
+  onSave,
   selectedPath,
   source,
   tree,
   workspaceKey,
 }: {
+  draftContents: string | null
   error: string | null
+  isDirty: boolean
   isLoadingSource: boolean
   isLoadingTree: boolean
+  isSavingSource: boolean
+  onChange(contents: string): void
   onOpen(path: string): void
+  onSave(): void
   selectedPath: string | null
   source: SourceFile | null
   tree: WorkspaceFileNode[]
@@ -181,14 +230,14 @@ function CodeExplorer({
         </div>
       </aside>
       <section className="workbench-preview">
-        <PreviewHeader path={source?.path ?? selectedPath} />
+        <PreviewHeader isDirty={isDirty} isSaving={isSavingSource} onSave={onSave} path={source?.path ?? selectedPath} />
         <div className="workbench-editor">
           {error ? <EmptyWorkbench icon={<FileText size={22} />} title="Unable to open file" copy={error} /> : null}
           {!error && isLoadingSource ? <LoadingWorkbench label="Opening file…" /> : null}
-          {!error && !isLoadingSource && !source ? <EmptyWorkbench icon={<FileCode2 size={22} />} title="Explore the codebase" copy="Choose a file to preview it here. Files are read-only in Vivlio." /> : null}
-          {!error && !isLoadingSource && source ? (
+          {!error && !isLoadingSource && !source ? <EmptyWorkbench icon={<FileCode2 size={22} />} title="Explore the codebase" copy="Choose a file to open and edit it here." /> : null}
+          {!error && !isLoadingSource && source && draftContents !== null ? (
             <Suspense fallback={<LoadingWorkbench label="Loading code viewer…" />}>
-              <SourceViewer file={source} />
+              <SourceViewer contents={draftContents} file={source} onChange={onChange} onSave={onSave} />
             </Suspense>
           ) : null}
         </div>
@@ -255,8 +304,16 @@ function FileTreeNode({ node, style }: NodeRendererProps<WorkspaceFileNode>) {
   )
 }
 
-function PreviewHeader({ path }: { path: string | null }) {
-  return <div className="preview-header"><span>{path?.split('/').at(-1) ?? 'No file selected'}</span>{path ? <small>{path}</small> : null}</div>
+function PreviewHeader({ path, isDirty = false, isSaving = false, onSave }: { path: string | null; isDirty?: boolean; isSaving?: boolean; onSave?(): void }) {
+  return (
+    <div className="preview-header">
+      <span>{path?.split('/').at(-1) ?? 'No file selected'}{isDirty ? <i aria-label="Unsaved changes" /> : null}</span>
+      {path ? <small>{path}</small> : null}
+      {onSave && path ? (
+        <button disabled={!isDirty || isSaving} onClick={onSave} type="button"><Save size={12} />{isSaving ? 'Saving…' : 'Save'}</button>
+      ) : null}
+    </div>
+  )
 }
 
 function EmptyWorkbench({ icon, title, copy }: { icon: React.ReactNode; title: string; copy: string }) {

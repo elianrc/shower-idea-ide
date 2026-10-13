@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  ArrowDownToLine,
   Check,
   ChevronDown,
   FolderTree,
   FolderGit2,
   GitBranch,
+  LoaderCircle,
   Plus,
   Search,
   Settings2,
@@ -27,11 +29,13 @@ export function RepositoryBar({ project, selectedSession }: { project: Project; 
   const selectRepository = useAppStore((state) => state.selectRepository)
   const switchBranch = useAppStore((state) => state.switchBranch)
   const createBranch = useAppStore((state) => state.createBranch)
+  const fetchOrigin = useAppStore((state) => state.fetchOrigin)
   const selectSession = useAppStore((state) => state.selectSession)
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null)
   const [branchQuery, setBranchQuery] = useState('')
   const [isCreatingBranch, setCreatingBranch] = useState(false)
   const [newBranchName, setNewBranchName] = useState('')
+  const [isFetching, setFetching] = useState(false)
   const rootRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -56,6 +60,18 @@ export function RepositoryBar({ project, selectedSession }: { project: Project; 
   const activeSessions = projectSessions.filter((session) => session.status !== 'completed')
   const completedSessions = projectSessions.filter((session) => session.status === 'completed').slice(0, 3)
   const displayedBranch = selectedSession?.branch ?? repositoryStatus?.branch ?? project.branch
+  const hasOrigin = repositoryStatus?.hasRemote ?? Boolean(project.remote)
+  const syncDetail = !hasOrigin
+    ? 'No origin remote'
+    : !repositoryStatus
+      ? 'Checking status…'
+      : !repositoryStatus.isClean
+        ? 'Local changes'
+        : repositoryStatus.behind > 0
+          ? `${repositoryStatus.behind} incoming ${repositoryStatus.behind === 1 ? 'commit' : 'commits'}`
+          : repositoryStatus.ahead > 0
+            ? `${repositoryStatus.ahead} ${repositoryStatus.ahead === 1 ? 'commit' : 'commits'} ahead`
+            : 'Up to date'
 
   const chooseRepository = async (projectId: string) => {
     setOpenMenu(null)
@@ -86,6 +102,13 @@ export function RepositoryBar({ project, selectedSession }: { project: Project; 
       setCreatingBranch(false)
       setNewBranchName('')
     }
+  }
+
+  const updateOrigin = async () => {
+    if (!hasOrigin || isFetching) return
+    setFetching(true)
+    await fetchOrigin(selectedSession?.id)
+    setFetching(false)
   }
 
   return (
@@ -277,6 +300,17 @@ export function RepositoryBar({ project, selectedSession }: { project: Project; 
       </div>
 
       <div className="repository-bar-spacer" />
+      <button
+        aria-label={`Fetch origin. ${syncDetail}`}
+        className="repository-sync-control"
+        disabled={!hasOrigin || isFetching}
+        onClick={() => void updateOrigin()}
+        type="button"
+      >
+        {isFetching ? <LoaderCircle className="spin-slow" size={16} /> : <ArrowDownToLine size={16} />}
+        <span><strong>Fetch origin</strong><small>{syncDetail}</small></span>
+        {repositoryStatus && !repositoryStatus.isClean ? <i aria-label="Uncommitted local changes" /> : null}
+      </button>
       <button aria-label="Settings" className="toolbar-icon-button" type="button"><Settings2 size={17} /></button>
     </header>
   )
