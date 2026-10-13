@@ -80,8 +80,17 @@ export class GitService {
   async fetchOrigin(repo: string): Promise<void> {
     const remote = await this.git(repo, ['remote', 'get-url', 'origin'], true)
     if (remote.code !== 0 || !remote.stdout.trim()) throw new Error('This repository does not have an origin remote.')
-    const result = await this.git(repo, ['fetch', '--prune', 'origin'], true)
-    if (result.code !== 0) throw new Error(result.stderr.trim() || 'Unable to fetch origin.')
+    const result = await this.git(repo, ['fetch', '--prune', 'origin'], true, {
+      GCM_INTERACTIVE: 'Never',
+      GIT_TERMINAL_PROMPT: '0',
+    })
+    if (result.code !== 0) {
+      const detail = result.stderr.trim()
+      const needsAuthentication = /authentication failed|could not read (?:username|password)|terminal prompts disabled/i.test(detail)
+      throw new Error(needsAuthentication
+        ? 'GitHub authentication is required. Sign in with GitHub CLI or configure a credential helper, then fetch again.'
+        : detail || 'Unable to fetch origin.')
+    }
   }
 
   async listBranches(repo: string): Promise<BranchInfo[]> {
@@ -227,8 +236,8 @@ export class GitService {
     return revision.stdout.trim()
   }
 
-  private async git(cwd: string, args: string[], allowFailure = false) {
-    const result = await this.processes.run('git', args, { cwd })
+  private async git(cwd: string, args: string[], allowFailure = false, env?: NodeJS.ProcessEnv) {
+    const result = await this.processes.run('git', args, { cwd, env })
     if (!allowFailure && result.code !== 0) {
       throw new Error(result.stderr.trim() || `Git command failed: git ${args.join(' ')}`)
     }

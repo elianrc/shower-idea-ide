@@ -3,7 +3,7 @@ import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GitService } from '../apps/desktop/src/main/services/git-service'
 import { ProcessManager } from '../apps/desktop/src/main/services/process-manager'
 
@@ -114,5 +114,24 @@ describe('GitService', () => {
     await expect(git.fetchOrigin(repository)).resolves.toBeUndefined()
     await execute('git', ['remote', 'remove', 'origin'], { cwd: repository })
     await expect(git.fetchOrigin(repository)).rejects.toThrow('does not have an origin')
+  })
+
+  it('disables hidden credential prompts while fetching', async () => {
+    const processes = {
+      run: vi.fn()
+        .mockResolvedValueOnce({ code: 0, stdout: 'https://github.com/example/private.git\n', stderr: '' })
+        .mockResolvedValueOnce({
+          code: 128,
+          stdout: '',
+          stderr: "fatal: could not read Username for 'https://github.com': terminal prompts disabled\n",
+        }),
+    }
+    const authenticatedGit = new GitService(processes as unknown as ProcessManager)
+
+    await expect(authenticatedGit.fetchOrigin(repository)).rejects.toThrow('GitHub authentication is required')
+    expect(processes.run).toHaveBeenLastCalledWith('git', ['fetch', '--prune', 'origin'], {
+      cwd: repository,
+      env: { GCM_INTERACTIVE: 'Never', GIT_TERMINAL_PROMPT: '0' },
+    })
   })
 })
