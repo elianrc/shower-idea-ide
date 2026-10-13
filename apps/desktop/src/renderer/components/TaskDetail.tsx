@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   ChevronDown,
   Circle,
-  FileCode2,
   GitBranch,
   GitCommitHorizontal,
   Play,
@@ -21,11 +20,8 @@ import type { Session, SessionActivity, VerificationResult } from '../../shared/
 import { useAppStore } from '../store'
 import { StatusPill } from './StatusPill'
 
-type DetailTab = 'conversation' | 'checks'
-
 export function SessionDetail({ session }: { session: Session }) {
   const selectSession = useAppStore((state) => state.selectSession)
-  const [tab, setTab] = useState<DetailTab>('conversation')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -51,19 +47,18 @@ export function SessionDetail({ session }: { session: Session }) {
   }
 
   return (
-    <div className="task-detail session-detail">
-      <header className="task-detail-header session-detail-header">
-        <button aria-label="Back to sessions" className="icon-button" onClick={() => selectSession(null)} type="button"><ArrowLeft size={18} /></button>
-        <div className="task-title-block">
+    <div className="session-chat">
+      <header className="session-chat-header">
+        <button aria-label="Back to sessions" className="session-chat-back" onClick={() => selectSession(null)} type="button"><ArrowLeft size={17} /></button>
+        <div className="session-chat-title">
           <h1>{session.title}</h1>
-          <div className="task-meta">
+          <div className="session-chat-meta">
             <StatusPill status={session.status} />
-            <span><Bot size={13} />Codex</span>
-            <span><GitBranch size={13} />{session.branch}</span>
-            <span>{session.workspaceMode === 'worktree' ? 'Isolated worktree' : 'Current branch'}</span>
+            <span><GitBranch size={11} />{session.branch}</span>
+            <span><Bot size={11} />Codex</span>
           </div>
         </div>
-        <div className="task-actions">
+        <div className="session-chat-actions">
           {isRunning ? (
             <button className="secondary-button danger" disabled={busy} onClick={() => void run(() => window.vivlio.sessions.stop(session.id))} type="button">
               <Square size={13} /> Stop
@@ -83,22 +78,11 @@ export function SessionDetail({ session }: { session: Session }) {
         </div>
       </header>
 
-      <nav aria-label="Session detail" className="detail-tabs">
-        {(['conversation', 'checks'] as const).map((item) => (
-          <button className={tab === item ? 'active' : ''} key={item} onClick={() => setTab(item)} type="button">
-            {item === 'conversation' ? 'Conversation' : 'Checks'}
-          </button>
-        ))}
-      </nav>
-
       {error || session.error ? <div className="task-error"><AlertCircle size={16} /><span>{error ?? session.error}</span></div> : null}
 
-      <div className={`detail-content detail-${tab}`}>
-        {tab === 'conversation' ? <Conversation activity={session.activity} /> : null}
-        {tab === 'checks' ? <ChecksView session={session} /> : null}
-      </div>
+      <Conversation activity={session.activity} verification={session.verification} />
 
-      {tab === 'conversation' && session.status !== 'completed' ? (
+      {session.status !== 'completed' ? (
         <div className="session-composer">
           <textarea
             aria-label="Message Codex"
@@ -121,7 +105,7 @@ export function SessionDetail({ session }: { session: Session }) {
   )
 }
 
-function Conversation({ activity }: { activity: SessionActivity[] }) {
+function Conversation({ activity, verification }: { activity: SessionActivity[]; verification: VerificationResult[] }) {
   const endRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -133,6 +117,7 @@ function Conversation({ activity }: { activity: SessionActivity[] }) {
       <div className="conversation-stream">
         {activity.length === 0 ? <p className="panel-empty">Waiting for the session to begin…</p> : null}
         {activity.map((entry) => <ConversationEntry entry={entry} key={entry.id} />)}
+        {verification.length > 0 ? <VerificationSummary results={verification} /> : null}
         <div ref={endRef} />
       </div>
     </div>
@@ -147,7 +132,7 @@ function ConversationEntry({ entry }: { entry: SessionActivity }) {
         <div className="message-author">
           {isUser ? <UserRound size={14} /> : <Bot size={14} />}
           <strong>{isUser ? 'You' : 'Codex'}</strong>
-          <time>{formatTime(entry.createdAt)}</time>
+          <time dateTime={entry.createdAt}>{formatTime(entry.createdAt)}</time>
         </div>
         <p>{entry.text}</p>
       </article>
@@ -157,7 +142,7 @@ function ConversationEntry({ entry }: { entry: SessionActivity }) {
   if (entry.kind === 'command' || entry.kind === 'output') {
     return (
       <details className="conversation-tool" open={entry.kind === 'command'}>
-        <summary><TerminalSquare size={13} /><span>{entry.kind === 'command' ? 'Command' : 'Output'}</span><time>{formatTime(entry.createdAt)}</time><ChevronDown size={13} /></summary>
+        <summary><TerminalSquare size={13} /><span>{entry.kind === 'command' ? 'Command' : 'Output'}</span><time dateTime={entry.createdAt}>{formatTime(entry.createdAt)}</time><ChevronDown size={13} /></summary>
         <pre>{entry.text}</pre>
       </details>
     )
@@ -166,57 +151,42 @@ function ConversationEntry({ entry }: { entry: SessionActivity }) {
   return (
     <div className={`conversation-event event-${entry.kind}`}>
       {entry.kind === 'error' ? <AlertCircle size={13} /> : <Check size={13} />}
-      <span>{entry.text}</span><time>{formatTime(entry.createdAt)}</time>
+      <span>{entry.text}</span><time dateTime={entry.createdAt}>{formatTime(entry.createdAt)}</time>
     </div>
   )
 }
 
-function ChecksView({ session }: { session: Session }) {
-  const additions = session.changedFiles.reduce((sum, file) => sum + file.additions, 0)
-  const deletions = session.changedFiles.reduce((sum, file) => sum + file.deletions, 0)
+function VerificationSummary({ results }: { results: VerificationResult[] }) {
+  const passed = results.filter((result) => result.status === 'passed').length
   return (
-    <div className="review-overview checks-view">
-      <section className="review-hero">
-        <p className="eyebrow">Session workspace</p>
-        <h2>{session.summary || 'Changes and checks stay attached to this conversation.'}</h2>
-        <div className="change-totals">
-          <span><FileCode2 size={15} /> {session.changedFiles.length} changed {session.changedFiles.length === 1 ? 'file' : 'files'}</span>
-          <span className="diff-add">+{additions}</span>
-          <span className="diff-remove">−{deletions}</span>
-        </div>
-      </section>
-      <div className="review-columns">
-        <section className="review-panel">
-          <div className="panel-heading"><h3>Files changed</h3><span>{session.changedFiles.length}</span></div>
-          {session.changedFiles.length === 0 ? <p className="panel-empty">No files have changed in this session.</p> : (
-            <div className="file-list">
-              {session.changedFiles.map((file) => (
-                <div className="file-row" key={file.path}>
-                  <span className={`file-status file-${file.status}`}>{file.status.slice(0, 1).toUpperCase()}</span>
-                  <span className="file-path">{file.path}</span><span className="diff-add">+{file.additions}</span><span className="diff-remove">−{file.deletions}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-        <section className="review-panel">
-          <div className="panel-heading"><h3>Checks</h3><span>{session.verification.length}</span></div>
-          {session.verification.length === 0 ? <p className="panel-empty">Run checks when you want validation.</p> : (
-            <div className="verification-list">{session.verification.map((result) => <VerificationRow key={result.id} result={result} />)}</div>
-          )}
-        </section>
+    <details className="chat-verification" open={results.some((result) => result.status === 'failed')}>
+      <summary>
+        {passed === results.length ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+        <span>Checks</span>
+        <small>{passed} of {results.length} passed</small>
+        <ChevronDown size={13} />
+      </summary>
+      <div className="chat-verification-results">
+        {results.map((result) => <VerificationRow key={result.id} result={result} />)}
       </div>
-    </div>
+    </details>
   )
 }
 
 function VerificationRow({ result }: { result: VerificationResult }) {
   const Icon = result.status === 'passed' ? CheckCircle2 : result.status === 'failed' ? XCircle : Circle
   return (
-    <details className={`verification-row verify-${result.status}`}>
-      <summary><Icon size={15} /><code>{result.command}</code>{result.durationMs ? <span>{(result.durationMs / 1000).toFixed(1)}s</span> : null}{result.output ? <ChevronDown size={13} /> : null}</summary>
-      {result.output ? <pre>{result.output}</pre> : null}
-    </details>
+    <div className={`chat-verification-row verify-${result.status}`}>
+      <Icon size={13} />
+      <code>{result.command}</code>
+      {result.durationMs ? <span>{(result.durationMs / 1000).toFixed(1)}s</span> : null}
+      {result.output ? (
+        <details>
+          <summary aria-label={`Show output for ${result.command}`}><ChevronDown size={12} /></summary>
+          <pre>{result.output}</pre>
+        </details>
+      ) : null}
+    </div>
   )
 }
 
