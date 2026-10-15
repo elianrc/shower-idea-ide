@@ -53,6 +53,7 @@
   --danger: #e78e88;
   --warning: #a8a8a8;
   --radius: 6px;
+  --navigator-width: 244px;
 }
 
 * { box-sizing: border-box; }
@@ -100,6 +101,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .repository-bar { position: relative; z-index: 15; display: flex; min-width: 0; grid-column: 1 / -1; grid-row: 2; align-items: stretch; border-bottom: 1px solid #242a28; background: #101314e8; box-shadow: 0 1px #050706; backdrop-filter: blur(18px); }
 .repository-control-wrap, .repository-bar-actions { -webkit-app-region: no-drag; position: relative; }
 .repository-control { display: flex; width: 244px; height: 51px; align-items: center; gap: 11px; padding: 0 15px; border: 0; border-right: 1px solid #242a28; color: #dce2df; background: transparent; text-align: left; cursor: pointer; }
+.repository-selector-wrap .repository-control { width: var(--navigator-width); }
 .repository-control:hover, .repository-control.active { background: #171b1a; }
 .repository-control:disabled { opacity: .82; cursor: default; }
 .repository-control:disabled:hover { background: transparent; }
@@ -111,7 +113,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .repository-control-copy strong { overflow: hidden; font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .repository-control > svg:last-child { flex: 0 0 auto; color: #59625e; transition: transform .16s ease; }
 .repository-control.active > svg:last-child { transform: rotate(180deg); }
-.repository-bar-drag { width: 8px; flex: 0 0 8px; }
+.repository-bar-drag { width: 0; flex: 0 0 0; }
 .repository-bar-spacer { -webkit-app-region: drag; min-width: 12px; flex: 1; }
 .repository-sync-control { -webkit-app-region: no-drag; display: grid; width: 168px; height: 51px; grid-template-columns: 18px minmax(0, 1fr) 7px; align-items: center; gap: 8px; padding: 0 12px; border: 0; border-left: 1px solid #202020; border-right: 1px solid #202020; color: #ccc; background: transparent; text-align: left; cursor: pointer; }
 .repository-sync-control:hover:not(:disabled) { color: #fff; background: #151515; }
@@ -527,17 +529,23 @@ h1, h2, h3 { font-family: 'Libron', Georgia, 'Times New Roman', serif; }
 .main-split-separator { position: relative; width: 1px; background: #242424; outline: 0; }
 .main-split-separator::after { position: absolute; top: 0; bottom: 0; left: -3px; width: 7px; content: ''; }
 .main-split-separator:hover, .main-split-separator[data-resize-handle-active] { background: #777; }
+.navigator-resize-handle { -webkit-app-region: no-drag; position: fixed; z-index: 50; top: 42px; bottom: 0; left: calc(var(--navigator-width) - 4px); width: 9px; outline: 0; cursor: col-resize; touch-action: none; }
+.navigator-resize-handle::after { position: absolute; top: 0; right: 4px; bottom: 0; width: 1px; background: #202020; content: ''; transition: background .12s ease, width .12s ease; }
+.navigator-resize-handle:hover::after, .navigator-resize-handle:focus-visible::after, .is-resizing-navigator .navigator-resize-handle::after { width: 2px; background: #888; }
+.is-resizing-navigator { cursor: col-resize; user-select: none; }
+.is-resizing-navigator * { cursor: col-resize !important; }
 
 .code-workbench { display: flex; height: 100%; min-width: 0; min-height: 0; flex-direction: column; background: #050505; }
 .workbench-header { display: flex; height: 42px; flex: 0 0 42px; align-items: stretch; justify-content: space-between; border-bottom: 1px solid #242424; background: #070707; }
-.workbench-toggle { display: flex; align-items: stretch; }
-.workbench-toggle button { position: relative; display: flex; min-width: 72px; align-items: center; justify-content: center; gap: 6px; padding: 0 14px; border: 0; border-right: 1px solid #202020; color: #686868; background: transparent; font-size: 10px; font-weight: 600; cursor: pointer; }
+.workbench-toggle { display: flex; width: var(--navigator-width); flex: 0 0 var(--navigator-width); align-items: stretch; border-right: 1px solid #202020; }
+.workbench-toggle button { position: relative; display: flex; min-width: 0; flex: 1; align-items: center; justify-content: center; gap: 6px; padding: 0 14px; border: 0; border-right: 1px solid #202020; color: #686868; background: transparent; font-size: 10px; font-weight: 600; cursor: pointer; }
+.workbench-toggle button:last-child { border-right: 0; }
 .workbench-toggle button:hover, .workbench-toggle button.active { color: #fff; }
 .workbench-toggle button.active::after { position: absolute; right: 12px; bottom: 0; left: 12px; height: 1px; background: #fff; content: ''; }
 .workbench-toggle button span { color: #777; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 8px; font-weight: 400; }
 .workbench-context { display: flex; min-width: 0; align-items: center; padding: 0 13px; overflow: hidden; color: #555; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
 
-.workbench-body { display: grid; min-width: 0; min-height: 0; flex: 1; grid-template-columns: minmax(155px, 34%) minmax(0, 1fr); }
+.workbench-body { display: grid; min-width: 0; min-height: 0; flex: 1; grid-template-columns: minmax(0, var(--navigator-width)) minmax(0, 1fr); }
 .workbench-navigator { min-width: 0; min-height: 0; overflow: hidden; border-right: 1px solid #242424; background: #070707; }
 .navigator-heading { display: flex; height: 34px; align-items: center; justify-content: space-between; padding: 0 11px; border-bottom: 1px solid #202020; color: #777; font-size: 8px; font-weight: 650; letter-spacing: .09em; text-transform: uppercase; }
 .navigator-heading span:last-child { color: #555; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 400; letter-spacing: 0; }
@@ -601,5 +609,4 @@ h1, h2, h3 { font-family: 'Libron', Georgia, 'Times New Roman', serif; }
   .repository-control.branch-control { width: 180px; }
   .review-columns { grid-template-columns: 1fr; }
   .task-grid { grid-template-columns: 1fr; }
-  .workbench-body { grid-template-columns: 145px minmax(0, 1fr); }
 }

@@ -119,7 +119,7 @@ export function RepositoryBar({ project, selectedSession }: { project: Project; 
   return (
     <header className="repository-bar" ref={rootRef}>
       <div className="repository-bar-drag" />
-      <div className="repository-control-wrap">
+      <div className="repository-control-wrap repository-selector-wrap">
         <button
           aria-expanded={openMenu === 'repository'}
           className={openMenu === 'repository' ? 'repository-control active' : 'repository-control'}

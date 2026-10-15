@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { AlertCircle, LoaderCircle, LogIn, X } from 'lucide-react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { Dashboard } from './components/Dashboard'
@@ -9,7 +9,13 @@ import { RepositoryBar } from './components/RepositoryBar'
 import { SessionDetail } from './components/TaskDetail'
 import { useAppStore } from './store'
 
+const defaultNavigatorWidth = 244
+const minimumNavigatorWidth = 180
+const maximumNavigatorWidth = 380
+const navigatorWidthStorageKey = 'vivlio:navigator-width:v1'
+
 export default function App() {
+  const [navigatorWidth, setNavigatorWidth] = useState(readNavigatorWidth)
   const initialize = useAppStore((state) => state.initialize)
   const project = useAppStore((state) => state.project)
   const sessions = useAppStore((state) => state.sessions)
@@ -47,9 +53,10 @@ export default function App() {
   const selectedSession = projectSessions.find((session) => session.id === selectedSessionId)
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" style={{ '--navigator-width': `${navigatorWidth}px` } as CSSProperties}>
       <div aria-hidden="true" className="window-titlebar" />
       <RepositoryBar project={project} selectedSession={selectedSession ?? null} />
+      <NavigatorResizeHandle onResize={setNavigatorWidth} width={navigatorWidth} />
       <main className="workspace-shell">
         <Group className="main-split" defaultLayout={{ workbench: 40, session: 60 }} orientation="horizontal">
           <Panel className="workbench-panel" defaultSize="40%" id="workbench" minSize="28%" maxSize="65%">
@@ -79,4 +86,79 @@ export default function App() {
       ) : null}
     </div>
   )
+}
+
+function NavigatorResizeHandle({ onResize, width }: { onResize(width: number): void; width: number }) {
+  const dragStart = useRef<{ pointerX: number; width: number } | null>(null)
+  const latestWidth = useRef(width)
+  latestWidth.current = width
+
+  const resize = (nextWidth: number) => {
+    const clampedWidth = clampNavigatorWidth(nextWidth)
+    latestWidth.current = clampedWidth
+    onResize(clampedWidth)
+  }
+  const save = (nextWidth: number) => window.localStorage.setItem(navigatorWidthStorageKey, String(clampNavigatorWidth(nextWidth)))
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    dragStart.current = { pointerX: event.clientX, width }
+    document.body.classList.add('is-resizing-navigator')
+  }
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!dragStart.current) return
+    resize(dragStart.current.width + event.clientX - dragStart.current.pointerX)
+  }
+
+  const finishPointerResize = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!dragStart.current) return
+    dragStart.current = null
+    document.body.classList.remove('is-resizing-navigator')
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+    save(latestWidth.current)
+  }
+
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const step = event.shiftKey ? 24 : 8
+    let nextWidth = width
+    if (event.key === 'ArrowLeft') nextWidth -= step
+    else if (event.key === 'ArrowRight') nextWidth += step
+    else if (event.key === 'Home') nextWidth = minimumNavigatorWidth
+    else if (event.key === 'End') nextWidth = maximumNavigatorWidth
+    else return
+    event.preventDefault()
+    resize(nextWidth)
+    save(nextWidth)
+  }
+
+  return (
+    <div
+      aria-label="Resize repository sidebar"
+      aria-orientation="vertical"
+      aria-valuemax={maximumNavigatorWidth}
+      aria-valuemin={minimumNavigatorWidth}
+      aria-valuenow={Math.round(width)}
+      className="navigator-resize-handle"
+      onDoubleClick={() => { resize(defaultNavigatorWidth); save(defaultNavigatorWidth) }}
+      onKeyDown={handleKeyDown}
+      onLostPointerCapture={finishPointerResize}
+      onPointerCancel={finishPointerResize}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={finishPointerResize}
+      role="separator"
+      tabIndex={0}
+    />
+  )
+}
+
+function readNavigatorWidth(): number {
+  const stored = Number(window.localStorage.getItem(navigatorWidthStorageKey))
+  return Number.isFinite(stored) && stored > 0 ? clampNavigatorWidth(stored) : defaultNavigatorWidth
+}
+
+function clampNavigatorWidth(width: number): number {
+  return Math.min(maximumNavigatorWidth, Math.max(minimumNavigatorWidth, Math.round(width)))
 }
