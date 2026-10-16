@@ -1,0 +1,116 @@
+.vivlio-workspace-navigation {
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 var(--spacing-double);
+  border-bottom: 1px solid var(--box-border-color);
+  background: var(--background-color);
+  flex-shrink: 0;
+}
+
+.vivlio-wordmark {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-half);
+  margin-right: var(--spacing-triple);
+  color: var(--text-color);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+}
+
+.vivlio-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+.vivlio-workspace-navigation-items {
+  display: flex;
+  align-self: stretch;
+  gap: var(--spacing-half);
+}
+
+.vivlio-workspace-navigation-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-half);
+  padding: 0 var(--spacing);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--text-secondary-color);
+  background: transparent;
+  font-family: var(--font-family-sans-serif);
+  font-size: var(--font-size);
+
+  &:hover {
+    color: var(--text-color);
+    background: var(--box-alt-background-color);
+  }
+
+  &.selected {
+    color: var(--text-color);
+    box-shadow: inset 0 -3px 0 #6e56cf;
+  }
+
+  &:focus-visible {
+    outline-offset: -4px;
+  }
+}
+
+.vivlio-workspace-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--spacing-quad);
+  color: var(--text-color);
+  background: var(--background-color);
+}
+
+.vivlio-workspace-placeholder-card {
+  width: min(520px, 100%);
+  padding: var(--spacing-quad);
+  border: 1px solid var(--box-border-color);
+  border-radius: var(--border-radius);
+  background: var(--box-background-color);
+  text-align: center;
+
+  > .octicon {
+    width: 32px;
+    height: 32px;
+    color: #6e56cf;
+  }
+
+  h1 {
+    margin: var(--spacing-half) 0 var(--spacing);
+    font-size: var(--font-size-xl);
+  }
+
+  p {
+    color: var(--text-secondary-color);
+    line-height: 1.5;
+  }
+
+  code {
+    display: block;
+    overflow: hidden;
+    margin-top: var(--spacing-double);
+    padding: var(--spacing);
+    border-radius: var(--border-radius);
+    background: var(--box-alt-background-color);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.vivlio-workspace-eyebrow {
+  margin: var(--spacing) 0 0;
+  font-weight: var(--font-weight-semibold);
+}
+
+.vivlio-workspace-status {
+  margin: var(--spacing-double) 0 0;
+  font-size: var(--font-size-sm);
+}
