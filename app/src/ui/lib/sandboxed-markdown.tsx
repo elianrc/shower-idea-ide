@@ -136,7 +136,7 @@ export class SandboxedMarkdown extends React.PureComponent<
         // line break (copies GitHub behavior on comments, but not on rendered
         // markdown files). Requires gfm be true.
         breaks: true,
-      })
+      }) as string
     )
 
     const styleSheet = await this.getInlineStyleSheet()

@@ -1,0 +1,372 @@
+.vivlio-workspace-surface {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.vivlio-code-workspace {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  color: var(--text-color);
+  background: var(--background-color);
+}
+
+.vivlio-code-explorer {
+  display: flex;
+  width: 252px;
+  min-width: 190px;
+  flex-direction: column;
+  border-right: 1px solid var(--box-border-color);
+  background: var(--box-alt-background-color);
+
+  > header {
+    display: flex;
+    min-height: 50px;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing) var(--spacing-double);
+    border-bottom: 1px solid var(--box-border-color);
+
+    > div {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+    }
+
+    strong,
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span {
+      color: var(--text-secondary-color);
+      font-size: var(--font-size-sm);
+    }
+
+    button {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 0;
+      color: var(--text-secondary-color);
+      background: transparent;
+      box-shadow: none;
+
+      &:hover {
+        color: var(--text-color);
+        background: var(--box-hover-background-color);
+      }
+    }
+  }
+}
+
+.vivlio-file-filter {
+  display: flex;
+  height: 30px;
+  align-items: center;
+  gap: var(--spacing-half);
+  margin: var(--spacing);
+  padding: 0 var(--spacing);
+  border: 1px solid var(--box-border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-secondary-color);
+  background: var(--background-color);
+
+  &:focus-within {
+    border-color: var(--focus-color);
+    box-shadow: 0 0 0 1px var(--focus-color);
+  }
+
+  input {
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    color: var(--text-color);
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+.vivlio-code-explorer-scroll {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+
+.vivlio-file-tree,
+.vivlio-file-tree ul,
+.vivlio-file-search-results {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vivlio-file-tree-entry,
+.vivlio-file-search-results button {
+  display: flex;
+  width: 100%;
+  height: 27px;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+  padding-top: 0;
+  padding-right: var(--spacing);
+  padding-bottom: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--text-color);
+  background: transparent;
+  box-shadow: none;
+  font-size: var(--font-size);
+  text-align: left;
+
+  &:hover {
+    background: var(--box-hover-background-color);
+  }
+
+  &.selected {
+    background: var(--box-selected-background-color);
+  }
+
+  &:focus-visible {
+    position: relative;
+    z-index: 1;
+    outline-offset: -2px;
+  }
+
+  .status {
+    margin-left: auto;
+    flex: none;
+  }
+}
+
+.vivlio-file-tree-disclosure {
+  display: inline-flex;
+  width: 12px;
+  flex: none;
+}
+
+.vivlio-file-tree-name,
+.vivlio-file-search-results span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vivlio-file-search-results button {
+  padding-right: var(--spacing);
+  padding-left: var(--spacing-double);
+}
+
+.vivlio-code-workspace-message,
+.vivlio-code-explorer-limit {
+  margin: var(--spacing-double);
+  color: var(--text-secondary-color);
+  font-size: var(--font-size-sm);
+}
+
+.vivlio-code-explorer-limit {
+  margin: 0;
+  padding: var(--spacing);
+  border-top: 1px solid var(--box-border-color);
+}
+
+.vivlio-editor-pane {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.vivlio-editor-toolbar {
+  display: flex;
+  min-height: 38px;
+  align-items: stretch;
+  border-bottom: 1px solid var(--box-border-color);
+  background: var(--box-alt-background-color);
+}
+
+.vivlio-editor-tabs {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  overflow-x: auto;
+}
+
+.vivlio-editor-tab {
+  display: flex;
+  min-width: 120px;
+  max-width: 220px;
+  align-items: stretch;
+  border-right: 1px solid var(--box-border-color);
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary-color);
+
+  &.selected {
+    border-bottom-color: #6e56cf;
+    color: var(--text-color);
+    background: var(--background-color);
+  }
+
+  > button {
+    min-width: 0;
+    padding: 0 var(--spacing);
+    border: 0;
+    border-radius: 0;
+    color: inherit;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  > [role='tab'] {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--spacing-half);
+
+    span:first-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
+
+.vivlio-editor-tab-close {
+  width: 28px;
+  flex: none;
+
+  &:hover {
+    background: var(--box-hover-background-color);
+  }
+}
+
+.vivlio-editor-dirty {
+  color: #6e56cf;
+  font-size: 9px;
+}
+
+.vivlio-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing);
+  padding: 0 var(--spacing);
+  border-left: 1px solid var(--box-border-color);
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-half);
+    color: var(--text-secondary-color);
+    white-space: nowrap;
+  }
+
+  button {
+    height: 26px;
+    padding: 0 var(--spacing);
+  }
+}
+
+.vivlio-code-workspace-error,
+.vivlio-editor-warning,
+.vivlio-code-workspace-loading-file {
+  padding: var(--spacing) var(--spacing-double);
+  border-bottom: 1px solid var(--box-border-color);
+  font-size: var(--font-size-sm);
+}
+
+.vivlio-code-workspace-error {
+  color: var(--form-error-text-color);
+  background: var(--form-error-background);
+}
+
+.vivlio-code-workspace-loading-file {
+  color: var(--text-secondary-color);
+}
+
+.vivlio-editor-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing);
+  color: var(--file-warning-color);
+  background: var(--file-warning-background-color);
+
+  span {
+    flex: 1;
+  }
+}
+
+.vivlio-editor-content {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.vivlio-monaco-editor {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+}
+
+.vivlio-code-workspace-empty {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: var(--spacing-quad);
+  color: var(--text-secondary-color);
+  text-align: center;
+
+  > .octicon {
+    width: 40px;
+    height: 40px;
+    color: #6e56cf;
+  }
+
+  h1 {
+    margin: var(--spacing-double) 0 var(--spacing-half);
+    color: var(--text-color);
+    font-size: var(--font-size-lg);
+  }
+
+  p {
+    max-width: 440px;
+    margin: 0;
+  }
+}
+
+.vivlio-editor-status-bar {
+  display: flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-double);
+  padding: 0 var(--spacing);
+  border-top: 1px solid var(--box-border-color);
+  color: var(--text-secondary-color);
+  background: var(--box-alt-background-color);
+  font-size: var(--font-size-sm);
+
+  span:first-child {
+    min-width: 0;
+    margin-right: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

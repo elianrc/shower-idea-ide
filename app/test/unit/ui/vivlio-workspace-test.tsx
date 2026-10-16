@@ -36,16 +36,15 @@ describe('Vivlio workspace', () => {
     assert.equal(selectedMode, 'sessions')
   })
 
-  it('identifies unfinished workspaces without presenting fake controls', () => {
+  it('identifies the unfinished sessions workspace without fake controls', () => {
     render(
       <VivlioWorkspacePlaceholder
-        mode="code"
         repositoryName="example-repository"
         repositoryPath="/work/example-repository"
       />
     )
 
-    assert.ok(screen.getByRole('heading', { name: 'Code workspace' }))
+    assert.ok(screen.getByRole('heading', { name: 'AI sessions' }))
     assert.ok(screen.getByText('example-repository'))
     assert.ok(screen.getByText('/work/example-repository'))
     assert.ok(screen.getByText(/implementation in progress/i))

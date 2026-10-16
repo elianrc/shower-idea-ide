@@ -1,5 +1,6 @@
 import * as path from 'path'
 import HtmlWebpackPlugin from 'html-webpack-plugin'
+import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
 import webpack from 'webpack'
 import merge from 'webpack-merge'
 import { getReplacements } from './app-info'
@@ -77,12 +78,25 @@ export const renderer = merge({}, commonConfig, {
         test: /\.cmd$/,
         type: 'asset/resource',
       },
+      {
+        test: /\.ttf$/,
+        type: 'asset/resource',
+      },
     ],
   },
   plugins: [
     new HtmlWebpackPlugin({
       template: path.join(__dirname, 'static', 'index.html'),
       chunks: ['renderer'],
+    }),
+    new MonacoWebpackPlugin({
+      filename: 'monaco/[name].worker.js',
+      // Monaco 0.57's package entry already owns language registration. The
+      // plugin's legacy language injection creates a circular editor-api
+      // import, so Vivlio registers its syntax tokenizers after the editor API
+      // initializes instead. We still use the plugin for editor features and
+      // the core editor worker.
+      languages: [],
     }),
     new webpack.NormalModuleReplacementPlugin(/^vscode-jsonrpc$/, resource => {
       resource.request = 'vscode-jsonrpc/lib/node/main.js'

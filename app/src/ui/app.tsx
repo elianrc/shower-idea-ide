@@ -226,11 +226,13 @@ import { RenameWorktreeDialog } from './worktrees/rename-worktree-dialog'
 import { DeleteWorktreeDialog } from './worktrees/delete-worktree-dialog'
 import { DeleteWorktreeFailedDialog } from './worktrees/delete-worktree-failed-dialog'
 import { WorktreeEntry } from '../models/worktree'
+import { AppFileStatus, WorkingDirectoryFileChange } from '../models/status'
 import {
   VivlioWorkspaceMode,
   VivlioWorkspaceNavigation,
   VivlioWorkspacePlaceholder,
 } from './vivlio-workspace'
+import { CodeWorkspace } from './code-workspace/code-workspace'
 
 const MinuteInMilliseconds = 1000 * 60
 const HourInMilliseconds = MinuteInMilliseconds * 60
@@ -286,6 +288,13 @@ export class App extends React.Component<IAppProps, IVivlioAppState> {
   private updateIntervalHandle?: number
 
   private repositoryViewRef = React.createRef<RepositoryView>()
+  private codeWorkspaceRef = React.createRef<CodeWorkspace>()
+  private getVivlioChangedFiles = memoizeOne(
+    (files: ReadonlyArray<WorkingDirectoryFileChange>) =>
+      new Map<string, AppFileStatus>(
+        files.map(file => [file.path, file.status])
+      )
+  )
 
   /**
    * Gets a value indicating whether or not we're currently showing a
@@ -3355,8 +3364,20 @@ export class App extends React.Component<IAppProps, IVivlioAppState> {
     )
   }
 
-  private onVivlioWorkspaceModeChanged = (mode: VivlioWorkspaceMode) => {
+  private onVivlioWorkspaceModeChanged = async (mode: VivlioWorkspaceMode) => {
+    if (
+      this.state.vivlioWorkspaceMode === 'code' &&
+      mode !== 'code' &&
+      (await this.codeWorkspaceRef.current?.saveAll()) === false
+    ) {
+      return
+    }
+
     this.setState({ vivlioWorkspaceMode: mode })
+  }
+
+  private onRequestReview = () => {
+    this.setState({ vivlioWorkspaceMode: 'review' })
   }
 
   private renderVivlioWorkspaceNavigation() {
@@ -3373,25 +3394,52 @@ export class App extends React.Component<IAppProps, IVivlioAppState> {
   }
 
   private renderVivlioWorkspace() {
-    if (this.state.vivlioWorkspaceMode === 'review') {
-      return this.renderRepository()
-    }
-
     const selectedState = this.state.selectedState
     if (
       selectedState === null ||
       selectedState === undefined ||
-      !(selectedState.repository instanceof Repository)
+      selectedState.type !== SelectionType.Repository
     ) {
       return this.renderRepository()
     }
 
+    const { repository } = selectedState
+    const changedFiles = this.getVivlioChangedFiles(
+      selectedState.state.changesState.workingDirectory.files
+    )
+
     return (
-      <VivlioWorkspacePlaceholder
-        mode={this.state.vivlioWorkspaceMode}
-        repositoryName={selectedState.repository.name}
-        repositoryPath={selectedState.repository.path}
-      />
+      <>
+        <div
+          className="vivlio-workspace-surface"
+          hidden={this.state.vivlioWorkspaceMode !== 'review'}
+        >
+          {this.renderRepository()}
+        </div>
+        <div
+          className="vivlio-workspace-surface"
+          hidden={this.state.vivlioWorkspaceMode !== 'code'}
+        >
+          <CodeWorkspace
+            ref={this.codeWorkspaceRef}
+            repositoryName={repository.name}
+            repositoryPath={repository.path}
+            changedFiles={changedFiles}
+            isActive={this.state.vivlioWorkspaceMode === 'code'}
+            isDarkTheme={this.state.currentTheme === ApplicationTheme.Dark}
+            onRequestReview={this.onRequestReview}
+          />
+        </div>
+        <div
+          className="vivlio-workspace-surface"
+          hidden={this.state.vivlioWorkspaceMode !== 'sessions'}
+        >
+          <VivlioWorkspacePlaceholder
+            repositoryName={repository.name}
+            repositoryPath={repository.path}
+          />
+        </div>
+      </>
     )
   }
 

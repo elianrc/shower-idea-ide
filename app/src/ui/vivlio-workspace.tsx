@@ -85,30 +85,24 @@ export class VivlioWorkspaceNavigation extends React.PureComponent<IVivlioWorksp
 }
 
 interface IVivlioWorkspacePlaceholderProps {
-  readonly mode: Exclude<VivlioWorkspaceMode, 'review'>
   readonly repositoryName: string
   readonly repositoryPath: string
 }
 
 export class VivlioWorkspacePlaceholder extends React.PureComponent<IVivlioWorkspacePlaceholderProps> {
   public render() {
-    const isCode = this.props.mode === 'code'
-    const title = isCode ? 'Code workspace' : 'AI sessions'
-    const description = isCode
-      ? 'The Monaco editor, file tree, search, and diff-aware editing will live here.'
-      : 'Codex and Claude Code conversations will live here as durable, reviewable repository sessions.'
-
     return (
       <main className="vivlio-workspace-placeholder">
         <div className="vivlio-workspace-placeholder-card">
-          <Octicon
-            symbol={isCode ? octicons.fileCode : octicons.commentDiscussion}
-          />
+          <Octicon symbol={octicons.commentDiscussion} />
           <p className="vivlio-workspace-eyebrow">
             {this.props.repositoryName}
           </p>
-          <h1>{title}</h1>
-          <p>{description}</p>
+          <h1>AI sessions</h1>
+          <p>
+            Codex and Claude Code conversations will live here as durable,
+            reviewable repository sessions.
+          </p>
           <code>{this.props.repositoryPath}</code>
           <p className="vivlio-workspace-status">
             Foundation ready · implementation in progress
