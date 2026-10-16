@@ -69,6 +69,7 @@ describe('IPC channel contract', () => {
     'show-installing-update',
     'install-windows-cli',
     'uninstall-windows-cli',
+    'ai-session-event',
   ] as const
 
   const expectedResponseChannels = [
@@ -99,6 +100,14 @@ describe('IPC channel contract', () => {
     'show-notification',
     'get-notifications-permission',
     'request-notifications-permission',
+    'ai-session-runtime-info',
+    'ai-session-start',
+    'ai-session-resume',
+    'ai-session-send',
+    'ai-session-interrupt',
+    'ai-session-approval',
+    'ai-session-rename',
+    'ai-session-archive',
   ] as const
 
   describe('RequestChannels', () => {

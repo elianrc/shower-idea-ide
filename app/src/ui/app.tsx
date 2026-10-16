@@ -230,9 +230,9 @@ import { AppFileStatus, WorkingDirectoryFileChange } from '../models/status'
 import {
   VivlioWorkspaceMode,
   VivlioWorkspaceNavigation,
-  VivlioWorkspacePlaceholder,
 } from './vivlio-workspace'
 import { CodeWorkspace } from './code-workspace/code-workspace'
+import { AISessionsWorkspace } from './ai-sessions/ai-sessions-workspace'
 
 const MinuteInMilliseconds = 1000 * 60
 const HourInMilliseconds = MinuteInMilliseconds * 60
@@ -3380,6 +3380,10 @@ export class App extends React.Component<IAppProps, IVivlioAppState> {
     this.setState({ vivlioWorkspaceMode: 'review' })
   }
 
+  private onRequestCode = () => {
+    this.setState({ vivlioWorkspaceMode: 'code' })
+  }
+
   private renderVivlioWorkspaceNavigation() {
     if (this.inNoRepositoriesViewState()) {
       return null
@@ -3434,9 +3438,13 @@ export class App extends React.Component<IAppProps, IVivlioAppState> {
           className="vivlio-workspace-surface"
           hidden={this.state.vivlioWorkspaceMode !== 'sessions'}
         >
-          <VivlioWorkspacePlaceholder
+          <AISessionsWorkspace
             repositoryName={repository.name}
             repositoryPath={repository.path}
+            changedFiles={changedFiles}
+            isActive={this.state.vivlioWorkspaceMode === 'sessions'}
+            onRequestCode={this.onRequestCode}
+            onRequestReview={this.onRequestReview}
           />
         </div>
       </>

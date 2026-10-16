@@ -17,6 +17,15 @@ import { DesktopNotificationPermission } from 'desktop-notifications'
 import { NotificationCallback } from 'desktop-notifications'
 import { DesktopAliveEvent } from './stores/alive-store'
 import { CLIAction } from './cli-action'
+import {
+  AISessionEvent,
+  IAISessionApprovalResponse,
+  IAISessionRuntimeInfo,
+  IAISessionSnapshot,
+  IResumeAISessionRequest,
+  ISendAISessionMessageRequest,
+  IStartAISessionRequest,
+} from './ai-sessions/types'
 
 /**
  * Defines the simplex IPC channel names we use from the renderer
@@ -87,6 +96,7 @@ export type RequestChannels = {
   'show-installing-update': () => void
   'install-windows-cli': () => void
   'uninstall-windows-cli': () => void
+  'ai-session-event': (event: AISessionEvent) => void
 }
 
 /**
@@ -136,4 +146,23 @@ export type RequestResponseChannels = {
   ) => Promise<string | null>
   'get-notifications-permission': () => Promise<DesktopNotificationPermission>
   'request-notifications-permission': () => Promise<boolean>
+  'ai-session-runtime-info': () => Promise<IAISessionRuntimeInfo>
+  'ai-session-start': (
+    request: IStartAISessionRequest
+  ) => Promise<IAISessionSnapshot>
+  'ai-session-resume': (
+    request: IResumeAISessionRequest
+  ) => Promise<IAISessionSnapshot>
+  'ai-session-send': (
+    request: ISendAISessionMessageRequest
+  ) => Promise<IAISessionSnapshot>
+  'ai-session-interrupt': (threadId: string) => Promise<IAISessionSnapshot>
+  'ai-session-approval': (
+    response: IAISessionApprovalResponse
+  ) => Promise<IAISessionSnapshot>
+  'ai-session-rename': (
+    threadId: string,
+    title: string
+  ) => Promise<IAISessionSnapshot>
+  'ai-session-archive': (threadId: string) => Promise<void>
 }

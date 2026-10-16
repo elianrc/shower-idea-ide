@@ -52,11 +52,17 @@ import {
 import { initializeDesktopNotifications } from './notifications'
 import parseCommandLineArgs from 'minimist'
 import { CLIAction } from '../lib/cli-action'
+import { CodexSessionManager } from './codex-session-manager'
 
 app.setAppLogsPath()
 enableSourceMaps()
 
 let mainWindow: AppWindow | null = null
+const codexSessionManager = new CodexSessionManager(event =>
+  mainWindow?.sendAISessionEvent(event)
+)
+
+app.once('before-quit', () => codexSessionManager.dispose())
 
 const launchTime = now()
 
@@ -360,6 +366,31 @@ app.on('ready', () => {
   )
 
   ipcMain.on('update-accounts', (_, accounts) => updateAccounts(accounts))
+
+  ipcMain.handle('ai-session-runtime-info', () =>
+    codexSessionManager.getRuntimeInfo()
+  )
+  ipcMain.handle('ai-session-start', (_, request) =>
+    codexSessionManager.startSession(request)
+  )
+  ipcMain.handle('ai-session-resume', (_, request) =>
+    codexSessionManager.resumeSession(request)
+  )
+  ipcMain.handle('ai-session-send', (_, request) =>
+    codexSessionManager.sendMessage(request)
+  )
+  ipcMain.handle('ai-session-interrupt', (_, threadId) =>
+    codexSessionManager.interruptSession(threadId)
+  )
+  ipcMain.handle('ai-session-approval', (_, response) =>
+    codexSessionManager.respondToApproval(response)
+  )
+  ipcMain.handle('ai-session-rename', (_, threadId, title) =>
+    codexSessionManager.renameSession(threadId, title)
+  )
+  ipcMain.handle('ai-session-archive', (_, threadId) =>
+    codexSessionManager.archiveSession(threadId)
+  )
 
   ipcMain.on('update-preferred-app-menu-item-labels', (_, labels) => {
     // The current application menu is mutable and we frequently

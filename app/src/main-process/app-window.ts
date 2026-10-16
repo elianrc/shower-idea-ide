@@ -29,6 +29,7 @@ import {
 import { addTrustedIPCSender } from './trusted-ipc-sender'
 import { getUpdaterGUID } from '../lib/get-updater-guid'
 import { CLIAction } from '../lib/cli-action'
+import { AISessionEvent } from '../lib/ai-sessions/types'
 
 export class AppWindow {
   private window: Electron.BrowserWindow
@@ -308,6 +309,11 @@ export class AppWindow {
     this.show()
 
     ipcWebContents.send(this.window.webContents, 'cli-action', action)
+  }
+
+  /** Send a Codex session update to the renderer. */
+  public sendAISessionEvent(event: AISessionEvent) {
+    ipcWebContents.send(this.window.webContents, 'ai-session-event', event)
   }
 
   /** Send the app launch timing stats to the renderer. */

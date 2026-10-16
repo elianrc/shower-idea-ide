@@ -83,32 +83,3 @@ export class VivlioWorkspaceNavigation extends React.PureComponent<IVivlioWorksp
     )
   }
 }
-
-interface IVivlioWorkspacePlaceholderProps {
-  readonly repositoryName: string
-  readonly repositoryPath: string
-}
-
-export class VivlioWorkspacePlaceholder extends React.PureComponent<IVivlioWorkspacePlaceholderProps> {
-  public render() {
-    return (
-      <main className="vivlio-workspace-placeholder">
-        <div className="vivlio-workspace-placeholder-card">
-          <Octicon symbol={octicons.commentDiscussion} />
-          <p className="vivlio-workspace-eyebrow">
-            {this.props.repositoryName}
-          </p>
-          <h1>AI sessions</h1>
-          <p>
-            Codex and Claude Code conversations will live here as durable,
-            reviewable repository sessions.
-          </p>
-          <code>{this.props.repositoryPath}</code>
-          <p className="vivlio-workspace-status">
-            Foundation ready · implementation in progress
-          </p>
-        </div>
-      </main>
-    )
-  }
-}
