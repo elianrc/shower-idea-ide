@@ -439,6 +439,88 @@ body.theme-dark {
   --md-neutral-muted-color: rgba(110, 118, 129, 0.4);
   --md-accent-emphasis-color: #1f6feb;
   --md-accent-fg-color: #58a6ff;
+
+  // Vivlio v1 dark palette. The variables map the visual specification onto
+  // Desktop's existing semantic system so inherited screens stay coherent.
+  --text-color: #eceef0;
+  --text-secondary-color: #b9bec5;
+  --text-secondary-color-muted: #9ba1a9;
+  --background-color: #24272b;
+  --box-background-color: #24272b;
+  --box-alt-background-color: #1f2226;
+  --box-border-color: #34383d;
+  --box-border-contrast-color: #41464d;
+  --box-hover-background-color: #2d3136;
+  --box-selected-background-color: #3a3f46;
+  --box-selected-active-background-color: #2e6fd6;
+  --box-selected-active-text-color: #fff;
+  --button-background: #2e6fd6;
+  --button-hover-background: #3b7de0;
+  --secondary-button-background: #2d3136;
+  --secondary-button-border-color: #41464d;
+  --secondary-button-hover-background: #3a3f46;
+  --secondary-button-hover-border-color: #4d535b;
+  --toolbar-background-color: #1c1f23;
+  --toolbar-border-color: #34383d;
+  --toolbar-button-hover-background-color: #2d3136;
+  --toolbar-button-focus-background-color: #2d3136;
+  --toolbar-badge-background-color: #3a3f46;
+  --tab-bar-active-color: #2e6fd6;
+  --tab-bar-background-color: #24272b;
+  --tab-bar-hover-background-color: #2d3136;
+  --tab-bar-count-background-color: #3a3f46;
+  --list-item-hover-background-color: #2d3136;
+  --focus-color: #7cb4ff;
+  --accent-color: #2e6fd6;
+  --link-button-color: #7cb4ff;
+  --color-modified: #d4a72c;
+  --color-new: #3fb950;
+  --color-deleted: #f85149;
+  --status-success-color: #3fb950;
+  --status-error-color: #f85149;
+  --status-pending-color: #e3a33b;
+
+  --diff-text-color: #eceef0;
+  --diff-alt-text-color: #9ba1a9;
+  --diff-border-color: #34383d;
+  --diff-gutter-background-color: #1f2226;
+  --diff-line-number-color: #88909a;
+  --diff-add-background-color: rgba(63, 185, 80, 0.13);
+  --diff-add-border-color: rgba(63, 185, 80, 0.3);
+  --diff-add-gutter-color: rgba(63, 185, 80, 0.3);
+  --diff-add-gutter-background-color: rgba(63, 185, 80, 0.3);
+  --diff-add-inner-background-color: rgba(63, 185, 80, 0.38);
+  --diff-add-text-color: #eceef0;
+  --diff-delete-background-color: rgba(248, 81, 73, 0.13);
+  --diff-delete-border-color: rgba(248, 81, 73, 0.3);
+  --diff-delete-gutter-color: rgba(248, 81, 73, 0.3);
+  --diff-delete-gutter-background-color: rgba(248, 81, 73, 0.3);
+  --diff-delete-inner-background-color: rgba(248, 81, 73, 0.38);
+  --diff-delete-text-color: #eceef0;
+  --diff-hunk-background-color: #2a2f36;
+  --diff-hunk-border-color: #34383d;
+  --diff-hunk-gutter-color: #34383d;
+  --diff-hunk-gutter-background-color: #2a2f36;
+  --diff-hunk-text-color: #9ba1a9;
+
+  --syntax-keyword-color: #ff7b72;
+  --syntax-type-color: #ff7b72;
+  --syntax-variable-color: #d2a8ff;
+  --syntax-alt-variable-color: #79c0ff;
+  --syntax-string-color: #a5d6ff;
+  --syntax-qualifier-color: #ffa657;
+  --syntax-atom-color: #79c0ff;
+
+  --vivlio-chrome-background: #1c1f23;
+  --vivlio-app-background: #24272b;
+  --vivlio-editor-background: #1f2226;
+  --vivlio-border-subtle: #2c3035;
+  --vivlio-control-background: #2d3136;
+  --vivlio-control-border: #41464d;
+  --vivlio-control-active: #3a3f46;
+  --vivlio-current-line: #2a2f37;
+  --vivlio-line-number-color: #88909a;
+  --vivlio-editor-modified-bar: #4c8df6;
 }
 
 // this emulates the cursor for the co-author input because it isn't exactly

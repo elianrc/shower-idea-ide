@@ -17,7 +17,7 @@
 
   .toolbar-dropdown-button {
     width: 40px;
-    height: 49px;
+    height: calc(var(--toolbar-height) - 1px);
   }
 
   // General button behavior, mostly resets.
@@ -121,12 +121,15 @@
 
     .title {
       font-weight: var(--font-weight-semibold);
+      font-size: 14px;
+      line-height: 19px;
       position: relative;
     }
 
     .description {
       color: var(--toolbar-button-secondary-color);
-      font-size: var(--font-size-sm);
+      font-size: 12px;
+      line-height: 16px;
       position: relative;
     }
 
@@ -156,5 +159,10 @@
     &:disabled {
       opacity: 1;
     }
+  }
+
+  &.branch-toolbar-button .title {
+    font-family: var(--font-family-monospace);
+    font-size: 13px;
   }
 }
