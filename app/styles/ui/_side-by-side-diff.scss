@@ -564,3 +564,28 @@
     }
   }
 }
+
+// A line excluded from the next commit deliberately loses its add/delete tint
+// and uses a strike treatment. This keeps staging state understandable without
+// depending on color alone.
+.side-by-side-diff.editable .row {
+  .before:has(> .line-number.selectable:not(.line-selected)),
+  .after:has(> .line-number.selectable:not(.line-selected)) {
+    color: #8a9098;
+    background: var(--vivlio-app-background);
+
+    .line-number {
+      color: var(--vivlio-line-number-color);
+      background: var(--vivlio-editor-background);
+
+      span {
+        text-decoration: line-through;
+      }
+    }
+
+    .content {
+      text-decoration: line-through;
+      text-decoration-thickness: 1px;
+    }
+  }
+}

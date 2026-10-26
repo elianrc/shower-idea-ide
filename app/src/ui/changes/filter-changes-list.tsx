@@ -1259,6 +1259,9 @@ export class FilterChangesList extends React.Component<
 
     const disableAllCheckbox =
       files.length === 0 || isCommitting || rebaseConflictState !== null
+    const partialCount = files.filter(
+      file => file.selection.getSelectionType() === DiffSelectionType.Partial
+    ).length
 
     const checkAllLabel = `${
       visibleFiles !== files.length ? `${formatNumber(visibleFiles)} of ` : ''
@@ -1276,6 +1279,9 @@ export class FilterChangesList extends React.Component<
           className="changes-list-check-all"
           label={checkAllLabel}
         />
+        {partialCount === 0 ? null : (
+          <span className="partial-count">{partialCount} partial</span>
+        )}
       </div>
     )
   }

@@ -1,10 +1,12 @@
 import * as React from 'react'
 
 import { PathLabel } from '../lib/path-label'
-import { Octicon, iconForStatus } from '../octicons'
 import { Checkbox, CheckboxValue } from '../lib/checkbox'
 import { mapStatus } from '../../lib/status'
-import { WorkingDirectoryFileChange } from '../../models/status'
+import {
+  AppFileStatusKind,
+  WorkingDirectoryFileChange,
+} from '../../models/status'
 import { TooltipDirection } from '../lib/tooltip'
 import { TooltippedContent } from '../lib/tooltipped-content'
 import { AriaLiveContainer } from '../accessibility/aria-live-container'
@@ -69,7 +71,7 @@ export class ChangedFile extends React.Component<IChangedFileProps, {}> {
     const includedText =
       this.props.include === true
         ? 'included'
-        : this.props.include === undefined
+        : this.props.include === null
         ? 'partially included'
         : 'not included'
 
@@ -103,6 +105,10 @@ export class ChangedFile extends React.Component<IChangedFileProps, {}> {
           matches={matches}
         />
 
+        {this.props.include === null ? (
+          <span className="partial-selection">partial</span>
+        ) : null}
+
         <AriaLiveContainer message={pathScreenReaderMessage} />
         <TooltippedContent
           ancestorFocused={focused}
@@ -110,10 +116,21 @@ export class ChangedFile extends React.Component<IChangedFileProps, {}> {
           tooltip={fileStatus}
           direction={TooltipDirection.EAST}
         >
-          <Octicon
-            symbol={iconForStatus(status)}
-            className={'status status-' + fileStatus.toLowerCase()}
-          />
+          <span
+            className={
+              'status status-square status-' + fileStatus.toLowerCase()
+            }
+            aria-hidden="true"
+          >
+            {status.kind === AppFileStatusKind.New ||
+            status.kind === AppFileStatusKind.Untracked
+              ? '+'
+              : status.kind === AppFileStatusKind.Deleted
+              ? '−'
+              : status.kind === AppFileStatusKind.Conflicted
+              ? '!'
+              : '•'}
+          </span>
         </TooltippedContent>
       </div>
     )

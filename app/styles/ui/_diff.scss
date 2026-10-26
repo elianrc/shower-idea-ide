@@ -908,7 +908,8 @@
       user-select: text;
     }
 
-    background: var(--box-alt-background-color);
+    min-height: 40px;
+    background: var(--vivlio-app-background);
     border-bottom: 1px solid var(--diff-border-color);
 
     display: flex;
@@ -917,12 +918,13 @@
     flex-grow: 0;
     align-items: center;
 
-    padding: var(--spacing-half) var(--spacing);
+    gap: 8px;
+    padding: 5px 10px 5px 14px;
 
     @include octicon-status;
 
     .diff-options-component {
-      margin-right: var(--spacing-half);
+      margin-right: 0;
       flex-shrink: 0;
     }
 

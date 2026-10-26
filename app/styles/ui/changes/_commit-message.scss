@@ -8,9 +8,9 @@
   margin-top: auto;
 
   display: flex;
-  background-color: var(--box-alt-background-color);
+  background-color: var(--vivlio-app-background);
 
-  padding: var(--spacing);
+  padding: 12px;
 
   .commit-progress {
     display: flex;
@@ -320,7 +320,8 @@
 
   .commit-button {
     max-width: 100%;
-    margin-top: var(--spacing);
+    min-height: 34px;
+    margin-top: 10px;
 
     @include ellipsis;
 
