@@ -1,5 +1,10 @@
 # Vivlio Product Definition
 
+> **Future direction:** This document describes Vivlio's broader product vision.
+> The first release is intentionally limited to GitHub Desktop workflows plus
+> the integrated editor described in the [v1 UI specification](v1-ui-spec.md).
+> AI sessions are not part of the v1 interface.
+
 **Status:** Canonical product direction
 **Product:** Vivlio
 **Category:** Git-centered desktop development workspace

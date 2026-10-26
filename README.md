@@ -1,32 +1,29 @@
 # Vivlio
 
-Vivlio is a repository-centered desktop workspace for reviewing Git changes,
-editing code, and managing Codex and Claude Code sessions in one place.
+Vivlio is a repository-centered desktop workspace that combines the complete
+Git workflow of GitHub Desktop with an integrated Monaco code editor.
 
-The product combines three workflows without making autonomous agents the
-center of the experience:
+The first release combines two workflows:
 
 - **Review:** the complete Git and GitHub workflow inherited from GitHub
   Desktop—repositories, branches, diffs, history, commits, remotes, and pull
   requests.
 - **Code:** a Monaco-based editor, file tree, search, and diff-aware editing.
-- **Sessions:** durable Codex and Claude Code conversations tied to the current
-  repository, branch, worktree, and resulting changes.
-
-The guiding principle is simple: AI can propose and execute work, but Vivlio
-keeps the user close to the code and makes review a first-class step.
+AI sessions are intentionally deferred to a later release. Vivlio v1 keeps the
+user close to the repository, makes review a first-class step, and does not add
+a second task model on top of Git.
 
 ## Current status
 
 Vivlio is being rebuilt on the GitHub Desktop codebase. The inherited Git
-workflow builds and passes its baseline test suite. The current implementation
-adds Vivlio product identity, safe network defaults, and the first
-repository-level **Review / Code / Sessions** workspace shell.
+workflow remains the product foundation. The current implementation adds a
+single repository interface with **Changes / History / Files**, a Monaco editor,
+and direct Diff / Edit navigation while preserving the existing Git behavior.
 
-Code and Sessions are visible foundations, not completed features yet. See the
-[product definition](docs/product-definition.md) and
-[reimplementation plan](docs/reimplementation-plan.md) for the intended scope
-and delivery sequence.
+See the [v1 UI specification](docs/v1-ui-spec.md) for the current launch scope.
+The broader [product definition](docs/product-definition.md) and
+[reimplementation plan](docs/reimplementation-plan.md) describe possible later
+releases, including AI sessions.
 
 ## Development
 
@@ -71,7 +68,7 @@ Vivlio is an independent application built from open-source foundations:
 - [T3 Code](https://github.com/pingdotgg/t3code), MIT licensed, is a reference
   for multi-provider coding-session UX and architecture.
 - [Monaco Editor](https://github.com/microsoft/monaco-editor), MIT licensed,
-  will provide the embedded editor.
+  provides the embedded editor.
 
 GitHub, GitHub Desktop, Claude, Claude Code, Codex, VS Code, and Monaco are
 trademarks of their respective owners. Vivlio is not affiliated with or
