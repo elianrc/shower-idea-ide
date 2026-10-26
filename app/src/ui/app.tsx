@@ -226,13 +226,6 @@ import { RenameWorktreeDialog } from './worktrees/rename-worktree-dialog'
 import { DeleteWorktreeDialog } from './worktrees/delete-worktree-dialog'
 import { DeleteWorktreeFailedDialog } from './worktrees/delete-worktree-failed-dialog'
 import { WorktreeEntry } from '../models/worktree'
-import { AppFileStatus, WorkingDirectoryFileChange } from '../models/status'
-import {
-  VivlioWorkspaceMode,
-  VivlioWorkspaceNavigation,
-} from './vivlio-workspace'
-import { CodeWorkspace } from './code-workspace/code-workspace'
-import { AISessionsWorkspace } from './ai-sessions/ai-sessions-workspace'
 
 const MinuteInMilliseconds = 1000 * 60
 const HourInMilliseconds = MinuteInMilliseconds * 60
@@ -258,10 +251,6 @@ interface IAppProps {
   readonly startTime: number
 }
 
-type IVivlioAppState = IAppState & {
-  readonly vivlioWorkspaceMode: VivlioWorkspaceMode
-}
-
 export const dialogTransitionTimeout = {
   enter: 250,
   exit: 100,
@@ -275,7 +264,7 @@ export const bannerTransitionTimeout = { enter: 500, exit: 400 }
  * changes. See https://github.com/desktop/desktop/issues/1398.
  */
 const ReadyDelay = 100
-export class App extends React.Component<IAppProps, IVivlioAppState> {
+export class App extends React.Component<IAppProps, IAppState> {
   private loading = true
 
   /**
@@ -288,13 +277,6 @@ export class App extends React.Component<IAppProps, IVivlioAppState> {
   private updateIntervalHandle?: number
 
   private repositoryViewRef = React.createRef<RepositoryView>()
-  private codeWorkspaceRef = React.createRef<CodeWorkspace>()
-  private getVivlioChangedFiles = memoizeOne(
-    (files: ReadonlyArray<WorkingDirectoryFileChange>) =>
-      new Map<string, AppFileStatus>(
-        files.map(file => [file.path, file.status])
-      )
-  )
 
   /**
    * Gets a value indicating whether or not we're currently showing a
@@ -333,10 +315,7 @@ export class App extends React.Component<IAppProps, IVivlioAppState> {
       )
     })
 
-    this.state = {
-      ...props.appStore.getState(),
-      vivlioWorkspaceMode: 'review',
-    }
+    this.state = props.appStore.getState()
     props.appStore.onDidUpdate(state => {
       this.setState(state)
     })
@@ -3355,99 +3334,11 @@ export class App extends React.Component<IAppProps, IVivlioAppState> {
         className={this.getDesktopAppContentsClassNames()}
       >
         {this.renderToolbar()}
-        {this.renderVivlioWorkspaceNavigation()}
         {this.renderBanner()}
-        {this.renderVivlioWorkspace()}
+        {this.renderRepository()}
         {this.renderPopups()}
         {this.renderDragElement()}
       </div>
-    )
-  }
-
-  private onVivlioWorkspaceModeChanged = async (mode: VivlioWorkspaceMode) => {
-    if (
-      this.state.vivlioWorkspaceMode === 'code' &&
-      mode !== 'code' &&
-      (await this.codeWorkspaceRef.current?.saveAll()) === false
-    ) {
-      return
-    }
-
-    this.setState({ vivlioWorkspaceMode: mode })
-  }
-
-  private onRequestReview = () => {
-    this.setState({ vivlioWorkspaceMode: 'review' })
-  }
-
-  private onRequestCode = () => {
-    this.setState({ vivlioWorkspaceMode: 'code' })
-  }
-
-  private renderVivlioWorkspaceNavigation() {
-    if (this.inNoRepositoriesViewState()) {
-      return null
-    }
-
-    return (
-      <VivlioWorkspaceNavigation
-        selectedMode={this.state.vivlioWorkspaceMode}
-        onModeChanged={this.onVivlioWorkspaceModeChanged}
-      />
-    )
-  }
-
-  private renderVivlioWorkspace() {
-    const selectedState = this.state.selectedState
-    if (
-      selectedState === null ||
-      selectedState === undefined ||
-      selectedState.type !== SelectionType.Repository
-    ) {
-      return this.renderRepository()
-    }
-
-    const { repository } = selectedState
-    const changedFiles = this.getVivlioChangedFiles(
-      selectedState.state.changesState.workingDirectory.files
-    )
-
-    return (
-      <>
-        <div
-          className="vivlio-workspace-surface"
-          hidden={this.state.vivlioWorkspaceMode !== 'review'}
-        >
-          {this.renderRepository()}
-        </div>
-        <div
-          className="vivlio-workspace-surface"
-          hidden={this.state.vivlioWorkspaceMode !== 'code'}
-        >
-          <CodeWorkspace
-            ref={this.codeWorkspaceRef}
-            repositoryName={repository.name}
-            repositoryPath={repository.path}
-            changedFiles={changedFiles}
-            isActive={this.state.vivlioWorkspaceMode === 'code'}
-            isDarkTheme={this.state.currentTheme === ApplicationTheme.Dark}
-            onRequestReview={this.onRequestReview}
-          />
-        </div>
-        <div
-          className="vivlio-workspace-surface"
-          hidden={this.state.vivlioWorkspaceMode !== 'sessions'}
-        >
-          <AISessionsWorkspace
-            repositoryName={repository.name}
-            repositoryPath={repository.path}
-            changedFiles={changedFiles}
-            isActive={this.state.vivlioWorkspaceMode === 'sessions'}
-            onRequestCode={this.onRequestCode}
-            onRequestReview={this.onRequestReview}
-          />
-        </div>
-      </>
     )
   }
 
@@ -4045,9 +3936,6 @@ export class App extends React.Component<IAppProps, IVivlioAppState> {
       return (
         <RepositoryView
           ref={this.repositoryViewRef}
-          // When switching repositories we want to remount the RepositoryView
-          // component to reset the scroll positions.
-          key={selectedState.repository.hash}
           repository={selectedState.repository}
           state={selectedState.state}
           dispatcher={this.props.dispatcher}
@@ -4095,6 +3983,7 @@ export class App extends React.Component<IAppProps, IVivlioAppState> {
           onCherryPick={this.startCherryPickWithoutBranch}
           pullRequestSuggestedNextAction={state.pullRequestSuggestedNextAction}
           showChangesFilter={state.showChangesFilter}
+          isDarkTheme={state.currentTheme === ApplicationTheme.Dark}
           shouldShowGenerateCommitMessageCallOut={
             !this.state.commitMessageGenerationButtonClicked
           }
