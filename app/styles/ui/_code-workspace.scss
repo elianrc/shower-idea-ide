@@ -1,84 +1,54 @@
-.vivlio-workspace-surface {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-
-  &[hidden] {
-    display: none;
-  }
-}
-
 .vivlio-code-workspace {
   display: flex;
-  flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
+  flex: 1 1 auto;
   color: var(--text-color);
-  background: var(--background-color);
+  background: var(--vivlio-app-background);
+
+  > .resizable-component {
+    display: flex;
+    min-height: 0;
+  }
 }
 
 .vivlio-code-explorer {
   display: flex;
-  width: 252px;
-  min-width: 190px;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
   flex-direction: column;
   border-right: 1px solid var(--box-border-color);
-  background: var(--box-alt-background-color);
+  background: var(--vivlio-app-background);
 
-  > header {
-    display: flex;
-    min-height: 50px;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--spacing) var(--spacing-double);
-    border-bottom: 1px solid var(--box-border-color);
-
-    > div {
-      display: flex;
-      min-width: 0;
-      flex-direction: column;
-    }
-
-    strong,
-    span {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    span {
-      color: var(--text-secondary-color);
-      font-size: var(--font-size-sm);
-    }
-
-    button {
-      width: 28px;
-      height: 28px;
-      padding: 0;
-      border: 0;
-      color: var(--text-secondary-color);
-      background: transparent;
-      box-shadow: none;
-
-      &:hover {
-        color: var(--text-color);
-        background: var(--box-hover-background-color);
-      }
-    }
+  > .tab-bar {
+    flex: none;
   }
+}
+
+.vivlio-files-filter-row {
+  display: flex;
+  height: 44px;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid var(--box-border-color);
 }
 
 .vivlio-file-filter {
   display: flex;
-  height: 30px;
+  height: 28px;
+  min-width: 0;
+  flex: 1;
   align-items: center;
-  gap: var(--spacing-half);
-  margin: var(--spacing);
-  padding: 0 var(--spacing);
-  border: 1px solid var(--box-border-color);
-  border-radius: var(--border-radius);
-  color: var(--text-secondary-color);
-  background: var(--background-color);
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--vivlio-control-border);
+  border-radius: 6px;
+  color: var(--text-secondary-color-muted);
+  background: var(--vivlio-chrome-background);
 
   &:focus-within {
     border-color: var(--focus-color);
@@ -95,13 +65,38 @@
     color: var(--text-color);
     background: transparent;
     box-shadow: none;
+    font-size: 13px;
   }
+}
+
+.vivlio-changed-filter,
+.vivlio-refresh-files {
+  height: 28px;
+  flex: none;
+  padding: 0 10px;
+  border: 1px solid var(--vivlio-control-border);
+  border-radius: 6px;
+  color: var(--text-secondary-color);
+  background: var(--vivlio-control-background);
+  box-shadow: none;
+
+  &:hover:not(:disabled),
+  &.selected {
+    color: var(--text-color);
+    background: var(--vivlio-control-active);
+  }
+}
+
+.vivlio-refresh-files {
+  width: 28px;
+  padding: 0;
 }
 
 .vivlio-code-explorer-scroll {
   min-height: 0;
   flex: 1;
   overflow: auto;
+  padding: 6px 0;
 }
 
 .vivlio-file-tree,
@@ -116,39 +111,53 @@
 .vivlio-file-search-results button {
   display: flex;
   width: 100%;
-  height: 27px;
+  height: 26px;
   min-width: 0;
   align-items: center;
   gap: 5px;
   padding-top: 0;
-  padding-right: var(--spacing);
+  padding-right: 10px;
   padding-bottom: 0;
   border: 0;
   border-radius: 0;
-  color: var(--text-color);
+  color: var(--text-secondary-color);
   background: transparent;
   box-shadow: none;
-  font-size: var(--font-size);
+  font-size: 12.5px;
   text-align: left;
 
   &:hover {
+    color: var(--text-color);
     background: var(--box-hover-background-color);
   }
 
   &.selected {
-    background: var(--box-selected-background-color);
+    color: #fff;
+    background: var(--box-selected-active-background-color);
+
+    .vivlio-git-status-letter,
+    .octicon {
+      color: #fff;
+    }
   }
 
   &:focus-visible {
     position: relative;
     z-index: 1;
+    outline: 2px solid var(--focus-color);
     outline-offset: -2px;
   }
+}
 
-  .status {
-    margin-left: auto;
-    flex: none;
-  }
+.vivlio-file-tree-entry .vivlio-file-tree-name,
+.vivlio-file-search-results span {
+  font-family: var(--font-family-monospace);
+  font-size: 12px;
+}
+
+.vivlio-file-tree-entry[aria-expanded] .vivlio-file-tree-name {
+  font-family: var(--font-family-sans-serif);
+  font-size: 12.5px;
 }
 
 .vivlio-file-tree-disclosure {
@@ -165,21 +174,66 @@
 }
 
 .vivlio-file-search-results button {
-  padding-right: var(--spacing);
-  padding-left: var(--spacing-double);
+  padding-left: 12px;
+}
+
+.vivlio-tree-change-dot {
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  flex: none;
+  border-radius: 50%;
+  background: var(--color-modified);
+}
+
+.vivlio-git-status-letter {
+  margin-left: auto;
+  flex: none;
+  color: var(--color-modified);
+  font-family: var(--font-family-monospace);
+  font-size: 11px;
+  font-weight: 700;
+
+  &.status-new,
+  &.status-untracked {
+    color: var(--color-new);
+  }
+
+  &.status-deleted,
+  &.status-conflicted {
+    color: var(--color-deleted);
+  }
 }
 
 .vivlio-code-workspace-message,
 .vivlio-code-explorer-limit {
-  margin: var(--spacing-double);
+  margin: 12px 16px;
   color: var(--text-secondary-color);
-  font-size: var(--font-size-sm);
+  font-size: 11.5px;
 }
 
 .vivlio-code-explorer-limit {
   margin: 0;
-  padding: var(--spacing);
+  padding: 8px 12px;
   border-top: 1px solid var(--box-border-color);
+}
+
+.vivlio-files-footer {
+  display: flex;
+  min-height: 48px;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--box-border-color);
+  color: var(--text-secondary-color);
+  font-size: 12px;
+
+  button {
+    height: 30px;
+    padding: 0 12px;
+  }
 }
 
 .vivlio-editor-pane {
@@ -188,14 +242,16 @@
   min-height: 0;
   flex: 1;
   flex-direction: column;
+  background: var(--vivlio-editor-background);
 }
 
 .vivlio-editor-toolbar {
   display: flex;
-  min-height: 38px;
+  min-height: 36px;
+  flex: none;
   align-items: stretch;
   border-bottom: 1px solid var(--box-border-color);
-  background: var(--box-alt-background-color);
+  background: var(--vivlio-app-background);
 }
 
 .vivlio-editor-tabs {
@@ -207,22 +263,21 @@
 
 .vivlio-editor-tab {
   display: flex;
-  min-width: 120px;
-  max-width: 220px;
+  min-width: max-content;
   align-items: stretch;
   border-right: 1px solid var(--box-border-color);
-  border-bottom: 2px solid transparent;
   color: var(--text-secondary-color);
+  background: var(--vivlio-app-background);
 
   &.selected {
-    border-bottom-color: #6e56cf;
     color: var(--text-color);
-    background: var(--background-color);
+    background: var(--vivlio-editor-background);
+    box-shadow: inset 0 2px 0 var(--accent-color);
   }
 
   > button {
     min-width: 0;
-    padding: 0 var(--spacing);
+    padding: 0 8px 0 12px;
     border: 0;
     border-radius: 0;
     color: inherit;
@@ -234,19 +289,24 @@
     display: flex;
     flex: 1;
     align-items: center;
-    gap: var(--spacing-half);
+    gap: 8px;
+    font-family: var(--font-family-monospace);
+    font-size: 12px;
 
     span:first-child {
-      overflow: hidden;
-      text-overflow: ellipsis;
       white-space: nowrap;
     }
+  }
+
+  .vivlio-git-status-letter {
+    margin-left: 0;
   }
 }
 
 .vivlio-editor-tab-close {
   width: 28px;
   flex: none;
+  padding: 0 !important;
 
   &:hover {
     background: var(--box-hover-background-color);
@@ -254,37 +314,108 @@
 }
 
 .vivlio-editor-dirty {
-  color: #6e56cf;
-  font-size: 9px;
+  position: relative;
+  width: 28px;
+  height: 100%;
+  margin: 0;
+  flex: none;
+  padding: 0 !important;
+
+  span {
+    display: block;
+    width: 8px;
+    height: 8px;
+    margin: auto;
+    border-radius: 50%;
+    background: var(--text-color);
+  }
+
+  &:hover {
+    background: var(--box-hover-background-color);
+  }
 }
 
 .vivlio-editor-actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing);
-  padding: 0 var(--spacing);
+  gap: 8px;
+  padding: 0 8px;
   border-left: 1px solid var(--box-border-color);
 
-  label {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-half);
-    color: var(--text-secondary-color);
+  > button {
+    height: 28px;
+    padding: 0 10px;
     white-space: nowrap;
   }
 
+  kbd {
+    color: var(--text-secondary-color);
+    font: inherit;
+  }
+}
+
+.vivlio-view-toggle {
+  display: inline-flex;
+  height: 28px;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid var(--vivlio-control-border);
+  border-radius: 6px;
+  background: var(--vivlio-control-background);
+
   button {
-    height: 26px;
-    padding: 0 var(--spacing);
+    height: 100%;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 0;
+    color: var(--text-secondary-color);
+    background: transparent;
+    box-shadow: none;
+
+    + button {
+      border-left: 1px solid var(--vivlio-control-border);
+    }
+
+    &[aria-pressed='true'] {
+      color: var(--text-color);
+      background: var(--vivlio-control-active);
+      font-weight: 600;
+    }
+
+    &:focus-visible {
+      position: relative;
+      z-index: 1;
+      outline: 2px solid var(--focus-color);
+      outline-offset: -2px;
+    }
+  }
+}
+
+.vivlio-editor-breadcrumb {
+  display: flex;
+  min-height: 28px;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--vivlio-border-subtle);
+  color: var(--text-secondary-color);
+  background: var(--vivlio-editor-background);
+  font-family: var(--font-family-monospace);
+  font-size: 11.5px;
+
+  span {
+    flex: none;
   }
 }
 
 .vivlio-code-workspace-error,
 .vivlio-editor-warning,
 .vivlio-code-workspace-loading-file {
-  padding: var(--spacing) var(--spacing-double);
+  padding: 8px 16px;
   border-bottom: 1px solid var(--box-border-color);
-  font-size: var(--font-size-sm);
+  font-size: 12px;
 }
 
 .vivlio-code-workspace-error {
@@ -299,7 +430,7 @@
 .vivlio-editor-warning {
   display: flex;
   align-items: center;
-  gap: var(--spacing);
+  gap: 8px;
   color: var(--file-warning-color);
   background: var(--file-warning-background-color);
 
@@ -328,20 +459,20 @@
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  padding: var(--spacing-quad);
+  padding: 32px;
   color: var(--text-secondary-color);
   text-align: center;
 
   > .octicon {
-    width: 40px;
-    height: 40px;
-    color: #6e56cf;
+    width: 36px;
+    height: 36px;
+    color: var(--accent-color);
   }
 
   h1 {
-    margin: var(--spacing-double) 0 var(--spacing-half);
+    margin: 16px 0 6px;
     color: var(--text-color);
-    font-size: var(--font-size-lg);
+    font-size: 18px;
   }
 
   p {
@@ -353,14 +484,16 @@
 .vivlio-editor-status-bar {
   display: flex;
   min-height: 24px;
+  flex: none;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--spacing-double);
-  padding: 0 var(--spacing);
+  gap: 16px;
+  padding: 0 12px;
   border-top: 1px solid var(--box-border-color);
   color: var(--text-secondary-color);
-  background: var(--box-alt-background-color);
-  font-size: var(--font-size-sm);
+  background: var(--vivlio-app-background);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
 
   span:first-child {
     min-width: 0;
@@ -368,5 +501,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+}
+
+@media (max-width: 1100px) {
+  .vivlio-editor-actions kbd,
+  .vivlio-files-footer > span {
+    display: none;
   }
 }

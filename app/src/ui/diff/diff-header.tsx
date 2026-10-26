@@ -25,6 +25,9 @@ interface IDiffHeaderProps {
 
   /** Called when the user opens the diff options popover */
   readonly onDiffOptionsOpened: () => void
+
+  /** Opens the selected working-tree file in Vivlio's editor. */
+  readonly onEditFile?: () => void
 }
 
 /** Displays information about a file */
@@ -36,6 +39,25 @@ export class DiffHeader extends React.Component<IDiffHeaderProps, {}> {
     return (
       <div className="header">
         <PathLabel path={this.props.path} status={this.props.status} />
+
+        {this.props.onEditFile === undefined ? null : (
+          <div
+            className="vivlio-view-toggle"
+            role="group"
+            aria-label="File view"
+          >
+            <button type="button" aria-pressed={true}>
+              Diff
+            </button>
+            <button
+              type="button"
+              aria-pressed={false}
+              onClick={this.props.onEditFile}
+            >
+              Edit {__DARWIN__ ? '⌘E' : 'Ctrl+E'}
+            </button>
+          </div>
+        )}
 
         {this.renderDiffOptions()}
 

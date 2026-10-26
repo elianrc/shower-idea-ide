@@ -255,7 +255,7 @@ $overlay-background-color: rgba(0, 0, 0, 0.4);
   --shadow-color: rgba(71, 83, 95, 0.19);
   --base-box-shadow: 0 2px 7px var(--shadow-color);
 
-  --toolbar-height: 50px;
+  --toolbar-height: 56px;
 
   --toolbar-background-color: #{$gray-900};
   --toolbar-border-color: #{$gray-900};
@@ -309,7 +309,7 @@ $overlay-background-color: rgba(0, 0, 0, 0.4);
   --toolbar-badge-background-color: #{$gray-600};
   --toolbar-badge-active-background-color: #{$gray-200};
 
-  --tab-bar-height: 29px;
+  --tab-bar-height: 40px;
   --tab-bar-active-color: #{$blue};
   --tab-bar-background-color: #{$white};
   --tab-bar-hover-background-color: #{$gray-100};
@@ -551,6 +551,19 @@ $overlay-background-color: rgba(0, 0, 0, 0.4);
   --md-neutral-muted-color: rgba(175, 184, 193, 0.2);
   --md-accent-emphasis-color: #0969da;
   --md-accent-fg-color: #0969da;
+
+  // Vivlio editor-shell surfaces. These default to Desktop's existing light
+  // theme and receive the high-fidelity palette in themes/_dark.scss.
+  --vivlio-chrome-background: var(--toolbar-background-color);
+  --vivlio-app-background: var(--box-background-color);
+  --vivlio-editor-background: var(--background-color);
+  --vivlio-border-subtle: var(--box-border-color);
+  --vivlio-control-background: var(--secondary-button-background);
+  --vivlio-control-border: var(--secondary-button-border-color);
+  --vivlio-control-active: var(--box-selected-background-color);
+  --vivlio-current-line: var(--box-hover-background-color);
+  --vivlio-line-number-color: var(--text-secondary-color);
+  --vivlio-editor-modified-bar: var(--color-renamed);
 }
 
 ::backdrop {

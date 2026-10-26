@@ -452,7 +452,7 @@ const RecentRepositoriesKey = 'recently-selected-repositories'
  */
 const RecentRepositoriesLength = 3
 
-const defaultSidebarWidth: number = 250
+const defaultSidebarWidth: number = 300
 const sidebarWidthConfigKey: string = 'sidebar-width'
 
 const defaultCommitSummaryWidth: number = 250
@@ -2722,7 +2722,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     // of the history tab
     const maxSidebarWidth =
       available - Math.max(toolbarButtonsMinWidth, tutorialMinWidth)
-    this.sidebarWidth = constrain(this.sidebarWidth, 220, maxSidebarWidth)
+    this.sidebarWidth = constrain(this.sidebarWidth, 240, maxSidebarWidth)
 
     // Now calculate the width we have left to distribute for the other panes
     available -= clamp(this.sidebarWidth)

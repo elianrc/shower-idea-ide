@@ -36,6 +36,8 @@ import { PullRequestSuggestedNextAction } from '../models/pull-request'
 import { clamp } from '../lib/clamp'
 import { Emoji } from '../lib/emoji'
 import { PopupType } from '../models/popup'
+import { AppFileStatus } from '../models/status'
+import { CodeWorkspace } from './code-workspace/code-workspace'
 
 interface IRepositoryViewProps {
   readonly repository: Repository
@@ -116,6 +118,7 @@ interface IRepositoryViewProps {
 
   /** Whether or not to show the changes filter */
   readonly showChangesFilter: boolean
+  readonly isDarkTheme: boolean
 
   /**
    * Whether or not to skip blocking commit hooks when creating commits
@@ -146,11 +149,13 @@ interface IRepositoryViewProps {
 interface IRepositoryViewState {
   readonly changesListScrollTop: number
   readonly compareListScrollTop: number
+  readonly filesSelected: boolean
 }
 
 const enum Tab {
   Changes = 0,
   History = 1,
+  Files = 2,
 }
 
 export class RepositoryView extends React.Component<
@@ -166,6 +171,7 @@ export class RepositoryView extends React.Component<
 
   private readonly changesSidebarRef = React.createRef<ChangesSidebar>()
   private readonly compareSidebarRef = React.createRef<CompareSidebar>()
+  private readonly codeWorkspaceRef = React.createRef<CodeWorkspace>()
 
   private focusHistoryNeeded: boolean = false
   private focusChangesNeeded: boolean = false
@@ -176,15 +182,18 @@ export class RepositoryView extends React.Component<
     this.state = {
       changesListScrollTop: 0,
       compareListScrollTop: 0,
+      filesSelected: false,
     }
   }
 
   public setFocusHistoryNeeded(): void {
     this.focusHistoryNeeded = true
+    this.setState({ filesSelected: false })
   }
 
   public setFocusChangesNeeded(): void {
     this.focusChangesNeeded = true
+    this.setState({ filesSelected: false })
   }
 
   public scrollCompareListToTop(): void {
@@ -215,10 +224,11 @@ export class RepositoryView extends React.Component<
   }
 
   private renderTabs(): JSX.Element {
-    const selectedTab =
-      this.props.state.selectedSection === RepositorySectionTab.Changes
-        ? Tab.Changes
-        : Tab.History
+    const selectedTab = this.state.filesSelected
+      ? Tab.Files
+      : this.props.state.selectedSection === RepositorySectionTab.Changes
+      ? Tab.Changes
+      : Tab.History
 
     return (
       <TabBar selectedIndex={selectedTab} onTabClicked={this.onTabClicked}>
@@ -229,6 +239,10 @@ export class RepositoryView extends React.Component<
 
         <div className="with-indicator" id="history-tab">
           <span>History</span>
+        </div>
+
+        <div className="with-indicator" id="files-tab">
+          <span>Files</span>
         </div>
       </TabBar>
     )
@@ -423,6 +437,57 @@ export class RepositoryView extends React.Component<
     )
   }
 
+  private getChangedFiles() {
+    return new Map<string, AppFileStatus>(
+      this.props.state.changesState.workingDirectory.files.map(file => [
+        file.path,
+        file.status,
+      ])
+    )
+  }
+
+  private renderFilesWorkspace() {
+    return (
+      <CodeWorkspace
+        ref={this.codeWorkspaceRef}
+        repositoryPath={this.props.repository.path}
+        changedFiles={this.getChangedFiles()}
+        isActive={this.state.filesSelected}
+        isDarkTheme={this.props.isDarkTheme}
+        sidebarHeader={this.renderTabs()}
+        sidebarWidth={this.props.sidebarWidth}
+        onSidebarResize={this.handleSidebarResize}
+        onSidebarReset={this.handleSidebarWidthReset}
+        onRequestReview={this.onRequestReview}
+        onRequestDiff={this.onRequestDiff}
+      />
+    )
+  }
+
+  private onRequestReview = (path: string | null) => {
+    this.setState({ filesSelected: false })
+    this.props.dispatcher.changeRepositorySection(
+      this.props.repository,
+      RepositorySectionTab.Changes
+    )
+
+    if (path !== null) {
+      const file = this.props.state.changesState.workingDirectory.files.find(
+        candidate => candidate.path === path
+      )
+      if (file !== undefined) {
+        void this.props.dispatcher.selectWorkingDirectoryFiles(
+          this.props.repository,
+          [file]
+        )
+      }
+    }
+  }
+
+  private onRequestDiff = (path: string) => {
+    this.onRequestReview(path)
+  }
+
   private onSidebarFocusWithinChanged = (sidebarHasFocusWithin: boolean) => {
     if (
       sidebarHasFocusWithin === false &&
@@ -613,6 +678,7 @@ export class RepositoryView extends React.Component<
             this.props.askForConfirmationOnDiscardChanges
           }
           onDiffOptionsOpened={this.onDiffOptionsOpened}
+          onEditFile={this.onEditFile}
         />
       )
     }
@@ -620,6 +686,12 @@ export class RepositoryView extends React.Component<
 
   private onOpenBinaryFile = (fullPath: string) => {
     openFile(fullPath, this.props.dispatcher)
+  }
+
+  private onEditFile = (path: string) => {
+    this.setState({ filesSelected: true }, () => {
+      void this.codeWorkspaceRef.current?.openFile(path)
+    })
   }
 
   private onOpenSubmodule = (fullPath: string) => {
@@ -645,9 +717,20 @@ export class RepositoryView extends React.Component<
   public render() {
     return (
       <UiView id="repository">
-        {this.renderSidebar()}
-        {this.renderContent()}
-        {this.maybeRenderTutorialPanel()}
+        <div
+          className="repository-git-surface"
+          hidden={this.state.filesSelected}
+        >
+          {this.renderSidebar()}
+          {this.renderContent()}
+          {this.maybeRenderTutorialPanel()}
+        </div>
+        <div
+          className="repository-files-surface"
+          hidden={!this.state.filesSelected}
+        >
+          {this.renderFilesWorkspace()}
+        </div>
       </UiView>
     )
   }
@@ -672,7 +755,11 @@ export class RepositoryView extends React.Component<
     window.removeEventListener('keydown', this.onGlobalKeyDown)
   }
 
-  public componentDidUpdate(): void {
+  public componentDidUpdate(prevProps: IRepositoryViewProps): void {
+    if (prevProps.repository.hash !== this.props.repository.hash) {
+      this.setState({ changesListScrollTop: 0, compareListScrollTop: 0 })
+    }
+
     if (this.focusChangesNeeded) {
       this.focusChangesNeeded = false
       this.changesSidebarRef.current?.focus()
@@ -693,9 +780,46 @@ export class RepositoryView extends React.Component<
       return
     }
 
-    // Toggle tab selection on Ctrl+Tab. Note that we don't care
-    // about the shift key here, we can get away with that as long
-    // as there's only two tabs.
+    const commandKey = __DARWIN__ ? event.metaKey : event.ctrlKey
+
+    if (commandKey && event.key.toLowerCase() === 'e') {
+      if (this.state.filesSelected) {
+        this.codeWorkspaceRef.current?.showActiveDiff()
+      } else if (
+        this.props.state.selectedSection === RepositorySectionTab.Changes
+      ) {
+        const selection = this.props.state.changesState.selection
+        if (
+          selection.kind === ChangesSelectionKind.WorkingDirectory &&
+          selection.selectedFileIDs.length === 1
+        ) {
+          const file =
+            this.props.state.changesState.workingDirectory.findFileWithID(
+              selection.selectedFileIDs[0]
+            )
+          if (file !== null) {
+            this.onEditFile(file.path)
+          }
+        }
+      }
+      event.preventDefault()
+      return
+    }
+
+    if (
+      commandKey &&
+      event.key.toLowerCase() === 'p' &&
+      this.state.filesSelected
+    ) {
+      const input = document.querySelector<HTMLInputElement>(
+        '.vivlio-file-filter input'
+      )
+      input?.focus()
+      event.preventDefault()
+      return
+    }
+
+    // Cycle the repository tabs with Ctrl+Tab.
     if (event.ctrlKey && event.key === 'Tab') {
       this.changeTab()
       event.preventDefault()
@@ -703,18 +827,34 @@ export class RepositoryView extends React.Component<
   }
 
   private changeTab() {
-    const section =
-      this.props.state.selectedSection === RepositorySectionTab.History
-        ? RepositorySectionTab.Changes
-        : RepositorySectionTab.History
-
-    this.props.dispatcher.changeRepositorySection(
-      this.props.repository,
-      section
-    )
+    const selectedTab = this.state.filesSelected
+      ? Tab.Files
+      : this.props.state.selectedSection === RepositorySectionTab.Changes
+      ? Tab.Changes
+      : Tab.History
+    const nextTab = ((selectedTab + 1) % 3) as Tab
+    void this.selectTab(nextTab)
   }
 
   private onTabClicked = (tab: Tab) => {
+    void this.selectTab(tab)
+  }
+
+  private selectTab = async (tab: Tab) => {
+    if (
+      this.state.filesSelected &&
+      tab !== Tab.Files &&
+      (await this.codeWorkspaceRef.current?.saveAll()) === false
+    ) {
+      return
+    }
+
+    if (tab === Tab.Files) {
+      this.setState({ filesSelected: true })
+      return
+    }
+
+    this.setState({ filesSelected: false })
     const section =
       tab === Tab.History
         ? RepositorySectionTab.History

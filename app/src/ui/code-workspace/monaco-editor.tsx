@@ -41,6 +41,34 @@ Monaco.languages.setMonarchTokensProvider('json', {
   },
 })
 
+Monaco.editor.defineTheme('vivlio-dark', {
+  base: 'vs-dark',
+  inherit: true,
+  rules: [
+    { token: 'keyword', foreground: 'FF7B72' },
+    { token: 'keyword.json', foreground: 'FF7B72' },
+    { token: 'string', foreground: 'A5D6FF' },
+    { token: 'string.key.json', foreground: 'D2A8FF' },
+    { token: 'number', foreground: '79C0FF' },
+    { token: 'type', foreground: 'FF7B72' },
+    { token: 'function', foreground: 'D2A8FF' },
+    { token: 'annotation', foreground: 'FFA657' },
+    { token: 'comment', foreground: '8A919A' },
+  ],
+  colors: {
+    'editor.background': '#1F2226',
+    'editor.foreground': '#ECEEF0',
+    'editorLineNumber.foreground': '#88909A',
+    'editorLineNumber.activeForeground': '#ECEEF0',
+    'editor.lineHighlightBackground': '#2A2F37',
+    'editor.selectionBackground': '#264F78',
+    'editor.inactiveSelectionBackground': '#3A3D41',
+    'editorCursor.foreground': '#ECEEF0',
+    'editorIndentGuide.background1': '#34383D',
+    'editorIndentGuide.activeBackground1': '#59616B',
+  },
+})
+
 interface IMonacoCodeEditorProps {
   readonly filePath: string
   readonly value: string
@@ -50,6 +78,7 @@ interface IMonacoCodeEditorProps {
   readonly onChange: (value: string) => void
   readonly onSave: () => void
   readonly onBlur: () => void
+  readonly onCursorPositionChanged: (line: number, column: number) => void
 }
 
 export class MonacoCodeEditor extends React.PureComponent<IMonacoCodeEditorProps> {
@@ -66,9 +95,11 @@ export class MonacoCodeEditor extends React.PureComponent<IMonacoCodeEditorProps
 
     this.editor = Monaco.editor.create(container, {
       automaticLayout: true,
-      fontFamily: 'SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace',
+      fontFamily:
+        'ui-monospace, SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace',
       fontSize: 13,
-      minimap: { enabled: true },
+      lineHeight: 22,
+      minimap: { enabled: false },
       scrollBeyondLastLine: false,
       smoothScrolling: true,
       tabSize: 2,
@@ -81,6 +112,12 @@ export class MonacoCodeEditor extends React.PureComponent<IMonacoCodeEditorProps
       }
     })
     this.editor.onDidBlurEditorText(this.props.onBlur)
+    this.editor.onDidChangeCursorPosition(event => {
+      this.props.onCursorPositionChanged(
+        event.position.lineNumber,
+        event.position.column
+      )
+    })
     this.editor.addAction({
       id: 'vivlio.save-file',
       label: 'Save File',
@@ -127,7 +164,7 @@ export class MonacoCodeEditor extends React.PureComponent<IMonacoCodeEditorProps
   }
 
   private updateTheme() {
-    Monaco.editor.setTheme(this.props.isDarkTheme ? 'vs-dark' : 'vs')
+    Monaco.editor.setTheme(this.props.isDarkTheme ? 'vivlio-dark' : 'vs')
   }
 
   private updateModel() {

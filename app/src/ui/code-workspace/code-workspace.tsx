@@ -10,9 +10,11 @@ import {
   writeCodeWorkspaceFile,
 } from '../../lib/code-workspace/file-system'
 import { mapStatus } from '../../lib/status'
-import { AppFileStatus } from '../../models/status'
-import { iconForStatus, Octicon } from '../octicons'
+import { AppFileStatus, AppFileStatusKind } from '../../models/status'
+import { Octicon } from '../octicons'
 import * as octicons from '../octicons/octicons.generated'
+import { IConstrainedValue } from '../../lib/app-state'
+import { Resizable } from '../resizable'
 import {
   createCodeWorkspaceTree,
   getCodeWorkspaceLanguage,
@@ -25,12 +27,16 @@ const AutoSaveDelay = 900
 const ExternalChangeCheckInterval = 2000
 
 export interface ICodeWorkspaceProps {
-  readonly repositoryName: string
   readonly repositoryPath: string
   readonly changedFiles: ReadonlyMap<string, AppFileStatus>
   readonly isActive: boolean
   readonly isDarkTheme: boolean
-  readonly onRequestReview: () => void
+  readonly sidebarHeader: React.ReactNode
+  readonly sidebarWidth: IConstrainedValue
+  readonly onSidebarResize: (width: number) => void
+  readonly onSidebarReset: () => void
+  readonly onRequestReview: (path: string | null) => void
+  readonly onRequestDiff: (path: string) => void
 }
 
 interface IOpenCodeWorkspaceDocument {
@@ -55,6 +61,9 @@ interface ICodeWorkspaceState {
   readonly loadingFilePath: string | null
   readonly listingTruncated: boolean
   readonly autoSaveEnabled: boolean
+  readonly showChangedOnly: boolean
+  readonly cursorLine: number
+  readonly cursorColumn: number
   readonly error: string | null
 }
 
@@ -66,6 +75,48 @@ interface ICodeWorkspaceTreeEntryProps {
   readonly changedFiles: ReadonlyMap<string, AppFileStatus>
   readonly onToggleDirectory: (path: string) => void
   readonly onOpenFile: (path: string) => void
+}
+
+function gitStatusLetter(status: AppFileStatus) {
+  switch (status.kind) {
+    case AppFileStatusKind.New:
+    case AppFileStatusKind.Untracked:
+      return 'A'
+    case AppFileStatusKind.Deleted:
+      return 'D'
+    case AppFileStatusKind.Renamed:
+      return 'R'
+    case AppFileStatusKind.Copied:
+      return 'C'
+    case AppFileStatusKind.Conflicted:
+      return 'U'
+    default:
+      return 'M'
+  }
+}
+
+function nodeContainsChanges(
+  node: ICodeWorkspaceTreeNode,
+  changedFiles: ReadonlyMap<string, AppFileStatus>
+): boolean {
+  return (
+    changedFiles.has(node.path) ||
+    node.children.some(child => nodeContainsChanges(child, changedFiles))
+  )
+}
+
+function filterTreeToChanges(
+  nodes: ReadonlyArray<ICodeWorkspaceTreeNode>,
+  changedFiles: ReadonlyMap<string, AppFileStatus>
+): ReadonlyArray<ICodeWorkspaceTreeNode> {
+  return nodes.flatMap(node => {
+    if (node.kind === 'file') {
+      return changedFiles.has(node.path) ? [node] : []
+    }
+
+    const children = filterTreeToChanges(node.children, changedFiles)
+    return children.length === 0 ? [] : [{ ...node, children }]
+  })
 }
 
 class CodeWorkspaceTreeEntry extends React.PureComponent<ICodeWorkspaceTreeEntryProps> {
@@ -83,6 +134,8 @@ class CodeWorkspaceTreeEntry extends React.PureComponent<ICodeWorkspaceTreeEntry
     const isExpanded = isDirectory && expandedDirectories.has(node.path)
     const status = changedFiles.get(node.path)
     const statusLabel = status === undefined ? undefined : mapStatus(status)
+    const containsChanges =
+      isDirectory && nodeContainsChanges(node, changedFiles)
 
     return (
       <li
@@ -119,12 +172,19 @@ class CodeWorkspaceTreeEntry extends React.PureComponent<ICodeWorkspaceTreeEntry
             }
           />
           <span className="vivlio-file-tree-name">{node.name}</span>
+          {containsChanges ? (
+            <span className="vivlio-tree-change-dot" aria-hidden="true" />
+          ) : null}
           {status === undefined ? null : (
-            <Octicon
-              className={`status status-${statusLabel!.toLowerCase()}`}
-              symbol={iconForStatus(status)}
-              title={statusLabel}
-            />
+            <>
+              <span
+                className={`vivlio-git-status-letter status-${statusLabel!.toLowerCase()}`}
+                aria-hidden="true"
+              >
+                {gitStatusLetter(status)}
+              </span>
+              <span className="sr-only">{statusLabel}</span>
+            </>
           )}
         </button>
         {isExpanded ? (
@@ -171,6 +231,9 @@ export class CodeWorkspace extends React.Component<
       loadingFilePath: null,
       listingTruncated: false,
       autoSaveEnabled: localStorage.getItem(AutoSavePreferenceKey) === 'true',
+      showChangedOnly: false,
+      cursorLine: 1,
+      cursorColumn: 1,
       error: null,
     }
   }
@@ -242,6 +305,8 @@ export class CodeWorkspace extends React.Component<
       documents: [],
       activeDocumentPath: null,
       filterText: '',
+      cursorLine: 1,
+      cursorColumn: 1,
       isLoadingRepository: true,
       listingTruncated: false,
       error: null,
@@ -290,7 +355,7 @@ export class CodeWorkspace extends React.Component<
     })
   }
 
-  private openFile = async (path: string) => {
+  public openFile = async (path: string) => {
     const openDocument = this.state.documents.find(
       document => document.path === path
     )
@@ -480,26 +545,18 @@ export class CodeWorkspace extends React.Component<
     }
   }
 
-  private saveAllDocuments = () => {
-    void this.saveAll()
-  }
-
   private onEditorBlurred = () => {
     if (this.state.autoSaveEnabled && this.state.activeDocumentPath !== null) {
       void this.saveDocument(this.state.activeDocumentPath)
     }
   }
 
-  private onAutoSaveChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const autoSaveEnabled = event.currentTarget.checked
-    localStorage.setItem(AutoSavePreferenceKey, String(autoSaveEnabled))
-    this.setState({ autoSaveEnabled }, () => {
-      if (autoSaveEnabled) {
-        void this.saveAll()
-      } else {
-        this.clearAutoSaveTimers()
-      }
-    })
+  private onCursorPositionChanged = (line: number, column: number) => {
+    this.setState({ cursorLine: line, cursorColumn: column })
+  }
+
+  private onShowChangedOnly = () => {
+    this.setState(state => ({ showChangedOnly: !state.showChangedOnly }))
   }
 
   private checkActiveDocumentForExternalChange = async () => {
@@ -589,8 +646,23 @@ export class CodeWorkspace extends React.Component<
   private requestReview = async () => {
     const saved = await this.saveAll()
     if (saved) {
-      this.props.onRequestReview()
+      this.props.onRequestReview(this.state.activeDocumentPath)
     }
+  }
+
+  private requestDiff = async () => {
+    const path = this.state.activeDocumentPath
+    if (path === null || !this.props.changedFiles.has(path)) {
+      return
+    }
+
+    if (await this.saveAll()) {
+      this.props.onRequestDiff(path)
+    }
+  }
+
+  public showActiveDiff = () => {
+    void this.requestDiff()
   }
 
   private refreshRepository = async () => {
@@ -611,6 +683,8 @@ export class CodeWorkspace extends React.Component<
         .filter(
           entry =>
             entry.kind === 'file' &&
+            (!this.state.showChangedOnly ||
+              this.props.changedFiles.has(entry.path)) &&
             entry.path.toLowerCase().includes(filterText)
         )
         .slice(0, 250)
@@ -641,7 +715,10 @@ export class CodeWorkspace extends React.Component<
         role="tree"
         aria-label="Repository files"
       >
-        {this.state.tree.map(node => (
+        {(this.state.showChangedOnly
+          ? filterTreeToChanges(this.state.tree, this.props.changedFiles)
+          : this.state.tree
+        ).map(node => (
           <CodeWorkspaceTreeEntry
             key={node.path}
             node={node}
@@ -674,6 +751,9 @@ export class CodeWorkspace extends React.Component<
         {this.state.documents.map(document => {
           const isDirty = this.isDocumentDirty(document)
           const isActive = document.path === this.state.activeDocumentPath
+          const status = this.props.changedFiles.get(document.path)
+          const statusLabel =
+            status === undefined ? undefined : mapStatus(status)
           return (
             <div
               className={classNames('vivlio-editor-tab', {
@@ -689,24 +769,39 @@ export class CodeWorkspace extends React.Component<
                 onClick={this.selectDocument}
               >
                 <span>{Path.basename(document.path)}</span>
-                {isDirty ? (
+                {status === undefined ? null : (
                   <>
-                    <span className="vivlio-editor-dirty" aria-hidden="true">
-                      ●
+                    <span
+                      className={`vivlio-git-status-letter status-${statusLabel!.toLowerCase()}`}
+                      aria-hidden="true"
+                    >
+                      {gitStatusLetter(status)}
                     </span>
-                    <span className="sr-only">Unsaved changes</span>
+                    <span className="sr-only">{statusLabel}</span>
                   </>
-                ) : null}
+                )}
               </button>
-              <button
-                type="button"
-                className="vivlio-editor-tab-close"
-                data-path={document.path}
-                onClick={this.closeDocument}
-                aria-label={`Close ${document.path}`}
-              >
-                <Octicon symbol={octicons.x} />
-              </button>
+              {isDirty ? (
+                <button
+                  type="button"
+                  className="vivlio-editor-dirty"
+                  data-path={document.path}
+                  onClick={this.closeDocument}
+                  aria-label={`Close ${document.path} with unsaved changes`}
+                >
+                  <span aria-hidden="true" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="vivlio-editor-tab-close"
+                  data-path={document.path}
+                  onClick={this.closeDocument}
+                  aria-label={`Close ${document.path}`}
+                >
+                  <Octicon symbol={octicons.x} />
+                </button>
+              )}
             </div>
           )
         })}
@@ -752,10 +847,14 @@ export class CodeWorkspace extends React.Component<
           onChange={this.onEditorChanged}
           onSave={this.saveActiveDocument}
           onBlur={this.onEditorBlurred}
+          onCursorPositionChanged={this.onCursorPositionChanged}
         />
         <footer className="vivlio-editor-status-bar">
           <span>{document.path}</span>
           <span>{getCodeWorkspaceLanguage(document.path)}</span>
+          <span>
+            Ln {this.state.cursorLine}, Col {this.state.cursorColumn}
+          </span>
           <span>
             {document.isSaving
               ? 'Saving…'
@@ -768,74 +867,123 @@ export class CodeWorkspace extends React.Component<
     )
   }
 
+  private renderBreadcrumb() {
+    const document = this.activeDocument
+    if (document === undefined) {
+      return null
+    }
+
+    const segments = document.path.split('/')
+    return (
+      <nav className="vivlio-editor-breadcrumb" aria-label="File path">
+        {segments.map((segment, index) => (
+          <React.Fragment key={`${segment}-${index}`}>
+            {index === 0 ? null : <span aria-hidden="true">›</span>}
+            <span>{segment}</span>
+          </React.Fragment>
+        ))}
+      </nav>
+    )
+  }
+
   public render() {
-    const canSave = this.state.documents.some(this.isDocumentDirty)
+    const canSave =
+      this.activeDocument !== undefined &&
+      this.isDocumentDirty(this.activeDocument)
 
     return (
       <main className="vivlio-code-workspace">
-        <aside className="vivlio-code-explorer">
-          <header>
-            <div>
-              <strong>{this.props.repositoryName}</strong>
-              <span>
-                {
-                  this.state.entries.filter(entry => entry.kind === 'file')
-                    .length
-                }{' '}
-                files
-              </span>
+        <Resizable
+          id="repository-sidebar"
+          width={this.props.sidebarWidth.value}
+          maximumWidth={this.props.sidebarWidth.max}
+          minimumWidth={this.props.sidebarWidth.min}
+          onReset={this.props.onSidebarReset}
+          onResize={this.props.onSidebarResize}
+          description="Repository sidebar"
+        >
+          <aside className="vivlio-code-explorer">
+            {this.props.sidebarHeader}
+            <div className="vivlio-files-filter-row">
+              <label className="vivlio-file-filter">
+                <Octicon symbol={octicons.search} />
+                <span className="sr-only">Filter repository files</span>
+                <input
+                  type="search"
+                  value={this.state.filterText}
+                  onChange={this.onFilterTextChanged}
+                  placeholder="Go to file"
+                />
+              </label>
+              <button
+                type="button"
+                className={classNames('vivlio-changed-filter', {
+                  selected: this.state.showChangedOnly,
+                })}
+                aria-pressed={this.state.showChangedOnly}
+                onClick={this.onShowChangedOnly}
+              >
+                Changed
+              </button>
+              <button
+                type="button"
+                className="vivlio-refresh-files"
+                onClick={this.refreshRepository}
+                aria-label="Refresh repository files"
+              >
+                <Octicon symbol={octicons.sync} />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={this.refreshRepository}
-              aria-label="Refresh repository files"
-            >
-              <Octicon symbol={octicons.sync} />
-            </button>
-          </header>
-          <label className="vivlio-file-filter">
-            <Octicon symbol={octicons.search} />
-            <span className="sr-only">Filter repository files</span>
-            <input
-              type="search"
-              value={this.state.filterText}
-              onChange={this.onFilterTextChanged}
-              placeholder="Filter files"
-            />
-          </label>
-          <div className="vivlio-code-explorer-scroll">
-            {this.renderExplorerContents()}
-          </div>
-          {this.state.listingTruncated ? (
-            <p className="vivlio-code-explorer-limit">
-              Showing the first 5,000 repository entries.
-            </p>
-          ) : null}
-        </aside>
+            <div className="vivlio-code-explorer-scroll">
+              {this.renderExplorerContents()}
+            </div>
+            {this.state.listingTruncated ? (
+              <p className="vivlio-code-explorer-limit">
+                Showing the first 5,000 repository entries.
+              </p>
+            ) : null}
+            <footer className="vivlio-files-footer">
+              <span>{this.props.changedFiles.size} changed files</span>
+              <button type="button" onClick={this.requestReview}>
+                Review changes
+              </button>
+            </footer>
+          </aside>
+        </Resizable>
         <section className="vivlio-editor-pane" aria-label="Code editor">
           <header className="vivlio-editor-toolbar">
             {this.renderTabs()}
             <div className="vivlio-editor-actions">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={this.state.autoSaveEnabled}
-                  onChange={this.onAutoSaveChanged}
-                />
-                Auto save
-              </label>
+              <div
+                className="vivlio-view-toggle"
+                role="group"
+                aria-label="File view"
+              >
+                <button
+                  type="button"
+                  aria-pressed={false}
+                  disabled={
+                    this.state.activeDocumentPath === null ||
+                    !this.props.changedFiles.has(this.state.activeDocumentPath)
+                  }
+                  onClick={this.requestDiff}
+                >
+                  Diff
+                </button>
+                <button type="button" aria-pressed={true}>
+                  Edit
+                </button>
+              </div>
               <button
                 type="button"
-                onClick={this.saveAllDocuments}
+                onClick={this.saveActiveDocument}
                 disabled={!canSave}
               >
-                Save all
-              </button>
-              <button type="button" onClick={this.requestReview}>
-                Review changes
+                Save <kbd>{__DARWIN__ ? '⌘S' : 'Ctrl+S'}</kbd>
               </button>
             </div>
           </header>
+          {this.renderBreadcrumb()}
           {this.state.error === null ? null : (
             <div className="vivlio-code-workspace-error" role="alert">
               {this.state.error}

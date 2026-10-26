@@ -54,6 +54,9 @@ interface IChangesProps {
 
   /** Called when the user opens the diff options popover */
   readonly onDiffOptionsOpened: () => void
+
+  /** Opens this working-tree file in Vivlio's editor. */
+  readonly onEditFile: (path: string) => void
 }
 
 export class Changes extends React.Component<IChangesProps, {}> {
@@ -111,6 +114,7 @@ export class Changes extends React.Component<IChangesProps, {}> {
           hideWhitespaceInDiff={this.props.hideWhitespaceInDiff}
           onHideWhitespaceInDiffChanged={this.onHideWhitespaceInDiffChanged}
           onDiffOptionsOpened={this.props.onDiffOptionsOpened}
+          onEditFile={this.onEditFile}
         />
 
         <SeamlessDiffSwitcher
@@ -134,6 +138,10 @@ export class Changes extends React.Component<IChangesProps, {}> {
         />
       </div>
     )
+  }
+
+  private onEditFile = () => {
+    this.props.onEditFile(this.props.file.path)
   }
 
   private onShowSideBySideDiffChanged = (showSideBySideDiff: boolean) => {
