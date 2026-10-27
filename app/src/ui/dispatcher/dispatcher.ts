@@ -95,6 +95,7 @@ import { TipState, IValidBranch } from '../../models/tip'
 import { Banner, BannerType } from '../../models/banner'
 
 import { ApplicationTheme } from '../lib/application-theme'
+import { IAppearanceCustomization } from '../lib/appearance-customization'
 import { installCLI } from '../lib/install-cli'
 import {
   executeMenuItem,
@@ -2676,6 +2677,11 @@ export class Dispatcher {
    */
   public setSelectedTheme(theme: ApplicationTheme) {
     return this.appStore._setSelectedTheme(theme)
+  }
+
+  /** Set the application-wide color palette and fonts. */
+  public setAppearanceCustomization(customization: IAppearanceCustomization) {
+    return this.appStore._setAppearanceCustomization(customization)
   }
 
   /**

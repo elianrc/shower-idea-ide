@@ -123,6 +123,11 @@ import {
   setPersistedTheme,
 } from '../../ui/lib/application-theme'
 import {
+  getPersistedAppearanceCustomization,
+  IAppearanceCustomization,
+  setPersistedAppearanceCustomization,
+} from '../../ui/lib/appearance-customization'
+import {
   getAppMenu,
   getCurrentWindowState,
   getCurrentWindowZoomFactor,
@@ -692,6 +697,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
   private selectedBranchesTab = BranchesTab.Branches
   private selectedTheme = ApplicationTheme.System
   private currentTheme: ApplicableTheme = ApplicationTheme.Light
+  private appearanceCustomization = getPersistedAppearanceCustomization()
   private selectedTabSize = tabSizeDefault
 
   private useWindowsOpenSSH: boolean = false
@@ -1321,6 +1327,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       selectedBranchesTab: this.selectedBranchesTab,
       selectedTheme: this.selectedTheme,
       currentTheme: this.currentTheme,
+      appearanceCustomization: this.appearanceCustomization,
       selectedTabSize: this.selectedTabSize,
       apiRepositories: this.apiRepositoriesStore.getState(),
       useWindowsOpenSSH: this.useWindowsOpenSSH,
@@ -8752,6 +8759,15 @@ export class AppStore extends TypedBaseStore<IAppState> {
   public _setSelectedTheme(theme: ApplicationTheme) {
     setPersistedTheme(theme)
     this.selectedTheme = theme
+    this.emitUpdate()
+
+    return Promise.resolve()
+  }
+
+  /** Set the application-wide color palette and fonts. */
+  public _setAppearanceCustomization(customization: IAppearanceCustomization) {
+    setPersistedAppearanceCustomization(customization)
+    this.appearanceCustomization = customization
     this.emitUpdate()
 
     return Promise.resolve()

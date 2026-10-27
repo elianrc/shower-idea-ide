@@ -46,6 +46,7 @@ import { WindowState } from './window-state'
 import { Shell } from './shells'
 
 import { ApplicableTheme, ApplicationTheme } from '../ui/lib/application-theme'
+import { IAppearanceCustomization } from '../ui/lib/appearance-customization'
 import { IAccountRepositories } from './stores/api-repositories-store'
 import { ManualConflictResolution } from '../models/manual-conflict-resolution'
 import { Banner } from '../models/banner'
@@ -319,6 +320,9 @@ export interface IAppState {
 
   /** The currently applied appearance (aka theme) */
   readonly currentTheme: ApplicableTheme
+
+  /** User-selected color palette and application fonts. */
+  readonly appearanceCustomization: IAppearanceCustomization
 
   /** The selected tab size preference */
   readonly selectedTabSize: number
