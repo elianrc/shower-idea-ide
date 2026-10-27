@@ -1758,6 +1758,7 @@ export class App extends React.Component<IAppProps, IAppState> {
             onDismissed={onPopupDismissedFn}
             selectedShell={this.state.selectedShell}
             selectedTheme={this.state.selectedTheme}
+            appearanceCustomization={this.state.appearanceCustomization}
             selectedTabSize={this.state.selectedTabSize}
             useCustomEditor={this.state.useCustomEditor}
             customEditor={this.state.customEditor}

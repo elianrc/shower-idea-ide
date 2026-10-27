@@ -41,8 +41,10 @@ earlier violet accent are not part of this release.
 
 ## Visual direction
 
-- One accent color: blue `#2e6fd6`.
-- Dense desktop layout with system UI fonts and the existing monospace stack.
+- Vivlio Blue (`#2e6fd6`) is the default accent. Settings also offers
+  Graphite, Nord, Solarized, and a fully custom palette.
+- Dense desktop layout with independently configurable interface and code
+  fonts. Users may select a suggestion or enter any locally installed font.
 - Hierarchy comes from stepped dark surfaces and one-pixel borders, not panel
   shadows.
 - Selected rows use the accent with white text.
@@ -52,6 +54,11 @@ earlier violet accent are not part of this release.
   colors.
 - Existing light-theme values remain functional. A separate high-fidelity
   light-theme design is deferred.
+
+Appearance changes preview live throughout the app and persist locally. The
+base Light / Dark / System mode remains independent from the selected palette.
+Cancelling Settings restores the palette and fonts that were active when the
+dialog opened.
 
 ## V1 screens
 

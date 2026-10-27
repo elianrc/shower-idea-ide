@@ -22,10 +22,23 @@ import {
   numberFormatToKey,
 } from '../../models/formatting-preferences'
 import { formatNumber } from '../../lib/format-number'
+import {
+  CodeFontOptions,
+  ColorTheme,
+  DefaultAppearanceCustomization,
+  getFontStack,
+  IAppearanceCustomization,
+  IThemeColors,
+  UIFontOptions,
+} from '../lib/appearance-customization'
 
 interface IAppearanceProps {
   readonly selectedTheme: ApplicationTheme
   readonly onSelectedThemeChanged: (theme: ApplicationTheme) => void
+  readonly appearanceCustomization: IAppearanceCustomization
+  readonly onAppearanceCustomizationChanged: (
+    customization: IAppearanceCustomization
+  ) => void
   readonly selectedTabSize: number
   readonly onSelectedTabSizeChanged: (tabSize: number) => void
   readonly selectedDateFormat: DateFormat
@@ -90,6 +103,46 @@ export class Appearance extends React.Component<
 
   private onSelectedThemeChanged = (theme: ApplicationTheme) => {
     this.props.onSelectedThemeChanged(theme)
+  }
+
+  private updateAppearanceCustomization(
+    update: Partial<IAppearanceCustomization>
+  ) {
+    this.props.onAppearanceCustomizationChanged({
+      ...this.props.appearanceCustomization,
+      ...update,
+    })
+  }
+
+  private onColorThemeChanged = (event: React.FormEvent<HTMLSelectElement>) => {
+    this.updateAppearanceCustomization({
+      colorTheme: event.currentTarget.value as ColorTheme,
+    })
+  }
+
+  private onUIFontChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
+    this.updateAppearanceCustomization({ uiFont: event.currentTarget.value })
+  }
+
+  private onCodeFontChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
+    this.updateAppearanceCustomization({ codeFont: event.currentTarget.value })
+  }
+
+  private onCustomColorChanged = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const key = event.currentTarget.dataset.colorKey as keyof IThemeColors
+    this.updateAppearanceCustomization({
+      colorTheme: ColorTheme.Custom,
+      customColors: {
+        ...this.props.appearanceCustomization.customColors,
+        [key]: event.currentTarget.value,
+      },
+    })
+  }
+
+  private resetAppearanceCustomization = () => {
+    this.props.onAppearanceCustomizationChanged(DefaultAppearanceCustomization)
   }
 
   private onSelectedTabSizeChanged = (
@@ -197,6 +250,132 @@ export class Appearance extends React.Component<
     )
   }
 
+  private renderColorTheme() {
+    const { appearanceCustomization } = this.props
+    const colorLabels: Readonly<Record<ColorTheme, string>> = {
+      [ColorTheme.Vivlio]: 'Vivlio Blue',
+      [ColorTheme.Graphite]: 'Graphite',
+      [ColorTheme.Nord]: 'Nord',
+      [ColorTheme.Solarized]: 'Solarized',
+      [ColorTheme.Custom]: 'Custom',
+    }
+
+    const colorControls: ReadonlyArray<{
+      readonly key: keyof IThemeColors
+      readonly label: string
+    }> = [
+      { key: 'accent', label: 'Accent' },
+      { key: 'chrome', label: 'Toolbar' },
+      { key: 'surface', label: 'Surface' },
+      { key: 'editor', label: 'Editor' },
+      { key: 'border', label: 'Border' },
+      { key: 'text', label: 'Text' },
+      { key: 'secondaryText', label: 'Secondary text' },
+    ]
+
+    return (
+      <div className="appearance-section color-theme-section">
+        <h2>Color palette</h2>
+        <p className="settings-description">
+          Choose a complete palette or customize its individual colors. Changes
+          are previewed immediately.
+        </p>
+        <Select
+          label="Palette"
+          value={appearanceCustomization.colorTheme}
+          onChange={this.onColorThemeChanged}
+        >
+          {Object.values(ColorTheme).map(theme => (
+            <option key={theme} value={theme}>
+              {colorLabels[theme]}
+            </option>
+          ))}
+        </Select>
+        {appearanceCustomization.colorTheme === ColorTheme.Custom ? (
+          <div className="custom-color-grid">
+            {colorControls.map(({ key, label }) => (
+              <label key={key}>
+                <span>{label}</span>
+                <input
+                  type="color"
+                  data-color-key={key}
+                  value={appearanceCustomization.customColors[key]}
+                  onChange={this.onCustomColorChanged}
+                />
+                <code>{appearanceCustomization.customColors[key]}</code>
+              </label>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    )
+  }
+
+  private renderFonts() {
+    const { appearanceCustomization } = this.props
+
+    return (
+      <div className="appearance-section font-section">
+        <h2>Fonts</h2>
+        <p className="settings-description">
+          Select a suggestion or enter the name of any font installed on this
+          computer.
+        </p>
+        <div className="font-controls">
+          <label>
+            <span>Interface font</span>
+            <input
+              type="text"
+              list="vivlio-ui-font-options"
+              value={appearanceCustomization.uiFont}
+              onChange={this.onUIFontChanged}
+              spellCheck={false}
+            />
+          </label>
+          <datalist id="vivlio-ui-font-options">
+            {UIFontOptions.map(font => (
+              <option key={font} value={font} />
+            ))}
+          </datalist>
+          <label>
+            <span>Code font</span>
+            <input
+              type="text"
+              list="vivlio-code-font-options"
+              value={appearanceCustomization.codeFont}
+              onChange={this.onCodeFontChanged}
+              spellCheck={false}
+            />
+          </label>
+          <datalist id="vivlio-code-font-options">
+            {CodeFontOptions.map(font => (
+              <option key={font} value={font} />
+            ))}
+          </datalist>
+        </div>
+        <div className="appearance-font-preview" aria-live="polite">
+          <span
+            style={{
+              fontFamily: getFontStack(appearanceCustomization.uiFont, false),
+            }}
+          >
+            Vivlio interface preview
+          </span>
+          <code
+            style={{
+              fontFamily: getFontStack(appearanceCustomization.codeFont, true),
+            }}
+          >
+            const preview = &apos;Code font&apos;
+          </code>
+        </div>
+        <button type="button" onClick={this.resetAppearanceCustomization}>
+          Reset palette and fonts
+        </button>
+      </div>
+    )
+  }
+
   private renderFormatting() {
     if (!enableFormattingPreferences()) {
       return null
@@ -287,6 +466,8 @@ export class Appearance extends React.Component<
     return (
       <DialogContent>
         {this.renderSelectedTheme()}
+        {this.renderColorTheme()}
+        {this.renderFonts()}
         {this.renderFormatting()}
         {this.renderSelectedTabSize()}
       </DialogContent>

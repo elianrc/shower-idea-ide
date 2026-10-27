@@ -21,6 +21,7 @@ import {
 } from '../lib/identifier-rules'
 import { Appearance } from './appearance'
 import { ApplicationTheme } from '../lib/application-theme'
+import { IAppearanceCustomization } from '../lib/appearance-customization'
 import { OkCancelButtonGroup } from '../dialog/ok-cancel-button-group'
 import { Integrations } from './integrations'
 import {
@@ -107,6 +108,7 @@ interface IPreferencesProps {
   readonly selectedExternalEditor: string | null
   readonly selectedShell: Shell
   readonly selectedTheme: ApplicationTheme
+  readonly appearanceCustomization: IAppearanceCustomization
   readonly selectedTabSize: number
   readonly useCustomEditor: boolean
   readonly customEditor: ICustomIntegration | null
@@ -168,6 +170,7 @@ interface IPreferencesState {
   readonly repositoryIndicatorsEnabled: boolean
 
   readonly initiallySelectedTheme: ApplicationTheme
+  readonly initiallySelectedAppearanceCustomization: IAppearanceCustomization
   readonly initiallySelectedTabSize: number
 
   readonly isLoadingGitConfig: boolean
@@ -244,6 +247,8 @@ export class Preferences extends React.Component<
       selectedShell: this.props.selectedShell,
       repositoryIndicatorsEnabled: this.props.repositoryIndicatorsEnabled,
       initiallySelectedTheme: this.props.selectedTheme,
+      initiallySelectedAppearanceCustomization:
+        this.props.appearanceCustomization,
       initiallySelectedTabSize: this.props.selectedTabSize,
       isLoadingGitConfig: true,
       underlineLinks: this.props.underlineLinks,
@@ -362,6 +367,14 @@ export class Preferences extends React.Component<
   private onCancel = () => {
     if (this.state.initiallySelectedTheme !== this.props.selectedTheme) {
       this.onSelectedThemeChanged(this.state.initiallySelectedTheme)
+    }
+    if (
+      this.state.initiallySelectedAppearanceCustomization !==
+      this.props.appearanceCustomization
+    ) {
+      this.onAppearanceCustomizationChanged(
+        this.state.initiallySelectedAppearanceCustomization
+      )
     }
     if (this.state.initiallySelectedTabSize !== this.props.selectedTabSize) {
       this.onSelectedTabSizeChanged(this.state.initiallySelectedTabSize)
@@ -638,6 +651,10 @@ export class Preferences extends React.Component<
           <Appearance
             selectedTheme={this.props.selectedTheme}
             onSelectedThemeChanged={this.onSelectedThemeChanged}
+            appearanceCustomization={this.props.appearanceCustomization}
+            onAppearanceCustomizationChanged={
+              this.onAppearanceCustomizationChanged
+            }
             selectedTabSize={this.props.selectedTabSize}
             onSelectedTabSizeChanged={this.onSelectedTabSizeChanged}
             selectedDateFormat={
@@ -899,6 +916,12 @@ export class Preferences extends React.Component<
 
   private onSelectedThemeChanged = (theme: ApplicationTheme) => {
     this.props.dispatcher.setSelectedTheme(theme)
+  }
+
+  private onAppearanceCustomizationChanged = (
+    customization: IAppearanceCustomization
+  ) => {
+    this.props.dispatcher.setAppearanceCustomization(customization)
   }
 
   private onUnderlineLinksChanged = (underlineLinks: boolean) => {
