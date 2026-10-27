@@ -21,6 +21,7 @@ import {
   ICodeWorkspaceTreeNode,
 } from './model'
 import { MonacoCodeEditor } from './monaco-editor'
+import { IAppearanceCustomization } from '../lib/appearance-customization'
 
 const AutoSavePreferenceKey = 'vivlio-code-workspace-auto-save'
 const AutoSaveDelay = 900
@@ -31,6 +32,7 @@ export interface ICodeWorkspaceProps {
   readonly changedFiles: ReadonlyMap<string, AppFileStatus>
   readonly isActive: boolean
   readonly isDarkTheme: boolean
+  readonly appearanceCustomization: IAppearanceCustomization
   readonly sidebarHeader: React.ReactNode
   readonly sidebarWidth: IConstrainedValue
   readonly onSidebarResize: (width: number) => void
@@ -844,6 +846,7 @@ export class CodeWorkspace extends React.Component<
           language={getCodeWorkspaceLanguage(document.path)}
           isActive={this.props.isActive}
           isDarkTheme={this.props.isDarkTheme}
+          appearanceCustomization={this.props.appearanceCustomization}
           onChange={this.onEditorChanged}
           onSave={this.saveActiveDocument}
           onBlur={this.onEditorBlurred}

@@ -21,6 +21,12 @@ import 'monaco-editor/languages/definitions/swift/register'
 import 'monaco-editor/languages/definitions/typescript/register'
 import 'monaco-editor/languages/definitions/xml/register'
 import 'monaco-editor/languages/definitions/yaml/register'
+import {
+  getFontStack,
+  getThemeColors,
+  IAppearanceCustomization,
+} from '../lib/appearance-customization'
+import { ApplicationTheme } from '../lib/application-theme'
 
 Monaco.languages.register({
   id: 'json',
@@ -41,33 +47,64 @@ Monaco.languages.setMonarchTokensProvider('json', {
   },
 })
 
-Monaco.editor.defineTheme('vivlio-dark', {
-  base: 'vs-dark',
-  inherit: true,
-  rules: [
-    { token: 'keyword', foreground: 'FF7B72' },
-    { token: 'keyword.json', foreground: 'FF7B72' },
-    { token: 'string', foreground: 'A5D6FF' },
-    { token: 'string.key.json', foreground: 'D2A8FF' },
-    { token: 'number', foreground: '79C0FF' },
-    { token: 'type', foreground: 'FF7B72' },
-    { token: 'function', foreground: 'D2A8FF' },
-    { token: 'annotation', foreground: 'FFA657' },
-    { token: 'comment', foreground: '8A919A' },
-  ],
-  colors: {
-    'editor.background': '#1F2226',
-    'editor.foreground': '#ECEEF0',
-    'editorLineNumber.foreground': '#88909A',
-    'editorLineNumber.activeForeground': '#ECEEF0',
-    'editor.lineHighlightBackground': '#2A2F37',
-    'editor.selectionBackground': '#264F78',
-    'editor.inactiveSelectionBackground': '#3A3D41',
-    'editorCursor.foreground': '#ECEEF0',
-    'editorIndentGuide.background1': '#34383D',
-    'editorIndentGuide.activeBackground1': '#59616B',
-  },
-})
+const CustomMonacoTheme = 'vivlio-custom'
+
+function withoutHash(color: string) {
+  return color.startsWith('#') ? color.slice(1) : color
+}
+
+function defineVivlioTheme(
+  isDarkTheme: boolean,
+  customization: IAppearanceCustomization
+) {
+  const colors = getThemeColors(
+    isDarkTheme ? ApplicationTheme.Dark : ApplicationTheme.Light,
+    customization
+  )
+  const syntaxColors = isDarkTheme
+    ? {
+        keyword: 'FF7B72',
+        string: 'A5D6FF',
+        symbol: 'D2A8FF',
+        number: '79C0FF',
+        annotation: 'FFA657',
+      }
+    : {
+        keyword: 'B31D28',
+        string: '0550AE',
+        symbol: '8250DF',
+        number: '0550AE',
+        annotation: '953800',
+      }
+
+  Monaco.editor.defineTheme(CustomMonacoTheme, {
+    base: isDarkTheme ? 'vs-dark' : 'vs',
+    inherit: true,
+    rules: [
+      { token: 'keyword', foreground: syntaxColors.keyword },
+      { token: 'keyword.json', foreground: syntaxColors.keyword },
+      { token: 'string', foreground: syntaxColors.string },
+      { token: 'string.key.json', foreground: syntaxColors.symbol },
+      { token: 'number', foreground: syntaxColors.number },
+      { token: 'type', foreground: syntaxColors.keyword },
+      { token: 'function', foreground: syntaxColors.symbol },
+      { token: 'annotation', foreground: syntaxColors.annotation },
+      { token: 'comment', foreground: withoutHash(colors.secondaryText) },
+    ],
+    colors: {
+      'editor.background': colors.editor,
+      'editor.foreground': colors.text,
+      'editorLineNumber.foreground': colors.secondaryText,
+      'editorLineNumber.activeForeground': colors.text,
+      'editor.lineHighlightBackground': colors.surface,
+      'editor.selectionBackground': `${colors.accent}66`,
+      'editor.inactiveSelectionBackground': `${colors.accent}33`,
+      'editorCursor.foreground': colors.text,
+      'editorIndentGuide.background1': colors.border,
+      'editorIndentGuide.activeBackground1': colors.secondaryText,
+    },
+  })
+}
 
 interface IMonacoCodeEditorProps {
   readonly filePath: string
@@ -75,6 +112,7 @@ interface IMonacoCodeEditorProps {
   readonly language: string
   readonly isActive: boolean
   readonly isDarkTheme: boolean
+  readonly appearanceCustomization: IAppearanceCustomization
   readonly onChange: (value: string) => void
   readonly onSave: () => void
   readonly onBlur: () => void
@@ -95,8 +133,10 @@ export class MonacoCodeEditor extends React.PureComponent<IMonacoCodeEditorProps
 
     this.editor = Monaco.editor.create(container, {
       automaticLayout: true,
-      fontFamily:
-        'ui-monospace, SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace',
+      fontFamily: getFontStack(
+        this.props.appearanceCustomization.codeFont,
+        true
+      ),
       fontSize: 13,
       lineHeight: 22,
       minimap: { enabled: false },
@@ -138,8 +178,23 @@ export class MonacoCodeEditor extends React.PureComponent<IMonacoCodeEditorProps
       this.updateModel()
     }
 
-    if (prevProps.isDarkTheme !== this.props.isDarkTheme) {
+    if (
+      prevProps.isDarkTheme !== this.props.isDarkTheme ||
+      prevProps.appearanceCustomization !== this.props.appearanceCustomization
+    ) {
       this.updateTheme()
+    }
+
+    if (
+      prevProps.appearanceCustomization.codeFont !==
+      this.props.appearanceCustomization.codeFont
+    ) {
+      this.editor?.updateOptions({
+        fontFamily: getFontStack(
+          this.props.appearanceCustomization.codeFont,
+          true
+        ),
+      })
     }
 
     if (!prevProps.isActive && this.props.isActive) {
@@ -164,7 +219,11 @@ export class MonacoCodeEditor extends React.PureComponent<IMonacoCodeEditorProps
   }
 
   private updateTheme() {
-    Monaco.editor.setTheme(this.props.isDarkTheme ? 'vivlio-dark' : 'vs')
+    defineVivlioTheme(
+      this.props.isDarkTheme,
+      this.props.appearanceCustomization
+    )
+    Monaco.editor.setTheme(CustomMonacoTheme)
   }
 
   private updateModel() {

@@ -3985,6 +3985,7 @@ export class App extends React.Component<IAppProps, IAppState> {
           pullRequestSuggestedNextAction={state.pullRequestSuggestedNextAction}
           showChangesFilter={state.showChangesFilter}
           isDarkTheme={state.currentTheme === ApplicationTheme.Dark}
+          appearanceCustomization={state.appearanceCustomization}
           shouldShowGenerateCommitMessageCallOut={
             !this.state.commitMessageGenerationButtonClicked
           }

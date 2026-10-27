@@ -38,6 +38,7 @@ import { Emoji } from '../lib/emoji'
 import { PopupType } from '../models/popup'
 import { AppFileStatus } from '../models/status'
 import { CodeWorkspace } from './code-workspace/code-workspace'
+import { IAppearanceCustomization } from './lib/appearance-customization'
 
 interface IRepositoryViewProps {
   readonly repository: Repository
@@ -119,6 +120,7 @@ interface IRepositoryViewProps {
   /** Whether or not to show the changes filter */
   readonly showChangesFilter: boolean
   readonly isDarkTheme: boolean
+  readonly appearanceCustomization: IAppearanceCustomization
 
   /**
    * Whether or not to skip blocking commit hooks when creating commits
@@ -454,6 +456,7 @@ export class RepositoryView extends React.Component<
         changedFiles={this.getChangedFiles()}
         isActive={this.state.filesSelected}
         isDarkTheme={this.props.isDarkTheme}
+        appearanceCustomization={this.props.appearanceCustomization}
         sidebarHeader={this.renderTabs()}
         sidebarWidth={this.props.sidebarWidth}
         onSidebarResize={this.handleSidebarResize}
