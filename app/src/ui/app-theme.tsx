@@ -5,9 +5,16 @@ import {
   getCurrentlyAppliedTheme,
 } from './lib/application-theme'
 import * as ipcRenderer from '../lib/ipc-renderer'
+import {
+  getFontStack,
+  getThemeColors,
+  getThemeCSSVariables,
+  IAppearanceCustomization,
+} from './lib/appearance-customization'
 
 interface IAppThemeProps {
   readonly theme: ApplicationTheme
+  readonly customization: IAppearanceCustomization
 }
 
 /**
@@ -33,6 +40,7 @@ export class AppTheme extends React.PureComponent<IAppThemeProps> {
 
   public componentWillUnmount() {
     this.clearThemes()
+    this.clearCustomization()
   }
 
   private async ensureTheme() {
@@ -47,8 +55,40 @@ export class AppTheme extends React.PureComponent<IAppThemeProps> {
     if (!document.body.classList.contains(newThemeClassName)) {
       this.clearThemes()
       document.body.classList.add(newThemeClassName)
-      this.updateColorScheme()
     }
+
+    const applicableTheme =
+      themeToDisplay === ApplicationTheme.Dark
+        ? ApplicationTheme.Dark
+        : ApplicationTheme.Light
+    this.applyCustomization(applicableTheme)
+    this.updateColorScheme()
+  }
+
+  private applyCustomization(
+    theme: ApplicationTheme.Light | ApplicationTheme.Dark
+  ) {
+    const { customization } = this.props
+    const bodyStyle = document.body.style
+    const colors = getThemeColors(theme, customization)
+
+    this.clearCustomization()
+    document.body.dataset.colorTheme = customization.colorTheme
+
+    for (const [property, value] of Object.entries(
+      getThemeCSSVariables(colors)
+    )) {
+      bodyStyle.setProperty(property, value)
+    }
+
+    bodyStyle.setProperty(
+      '--font-family-sans-serif',
+      getFontStack(customization.uiFont, false)
+    )
+    bodyStyle.setProperty(
+      '--font-family-monospace',
+      getFontStack(customization.codeFont, true)
+    )
   }
 
   private updateColorScheme = () => {
@@ -79,6 +119,25 @@ export class AppTheme extends React.PureComponent<IAppThemeProps> {
         body.classList.remove(className)
       }
     }
+  }
+
+  private clearCustomization() {
+    const bodyStyle = document.body.style
+    const properties = [
+      ...Object.keys(
+        getThemeCSSVariables(
+          getThemeColors(ApplicationTheme.Dark, this.props.customization)
+        )
+      ),
+      '--font-family-sans-serif',
+      '--font-family-monospace',
+    ]
+
+    for (const property of properties) {
+      bodyStyle.removeProperty(property)
+    }
+
+    delete document.body.dataset.colorTheme
   }
 
   public render() {

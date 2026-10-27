@@ -4,6 +4,7 @@ import * as React from 'react'
 
 import { AppTheme } from '../../../src/ui/app-theme'
 import { ApplicationTheme } from '../../../src/ui/lib/application-theme'
+import { DefaultAppearanceCustomization } from '../../../src/ui/lib/appearance-customization'
 import { fireEvent, render } from '../../helpers/ui/render'
 
 type TUnlinkBehavior = (path: string) => Promise<void>
@@ -39,29 +40,36 @@ describe('helper side-effect surfaces', () => {
     }
 
     try {
-      document.body.style.setProperty('--background-color', 'rgb(1, 2, 3)')
-
-      const view = render(<AppTheme theme={ApplicationTheme.Dark} />)
+      const view = render(
+        <AppTheme
+          theme={ApplicationTheme.Dark}
+          customization={DefaultAppearanceCustomization}
+        />
+      )
 
       assert.ok(document.body.classList.contains('theme-dark'))
       assert.equal(document.documentElement.style.colorScheme, 'dark')
-      assert.deepEqual(sends, [
-        ['update-window-background-color', 'rgb(1, 2, 3)'],
-      ])
+      assert.deepEqual(sends, [['update-window-background-color', '#24272b']])
 
-      view.rerender(<AppTheme theme={ApplicationTheme.Light} />)
+      view.rerender(
+        <AppTheme
+          theme={ApplicationTheme.Light}
+          customization={DefaultAppearanceCustomization}
+        />
+      )
 
       assert.equal(document.body.classList.contains('theme-dark'), false)
       assert.ok(document.body.classList.contains('theme-light'))
       assert.equal(document.documentElement.style.colorScheme, 'light')
       assert.deepEqual(sends.at(-1), [
         'update-window-background-color',
-        'rgb(1, 2, 3)',
+        '#ffffff',
       ])
 
       view.unmount()
 
       assert.equal(document.body.classList.contains('theme-light'), false)
+      assert.equal(document.body.style.getPropertyValue('--accent-color'), '')
     } finally {
       electron.ipcRenderer.send = previousSend
     }

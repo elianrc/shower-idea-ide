@@ -4046,7 +4046,10 @@ export class App extends React.Component<IAppProps, IAppState> {
         className={className}
         style={{ tabSize: currentTabSize }}
       >
-        <AppTheme theme={currentTheme} />
+        <AppTheme
+          theme={currentTheme}
+          customization={this.state.appearanceCustomization}
+        />
         {this.renderTitlebar()}
         {this.state.showWelcomeFlow
           ? this.renderWelcomeFlow()
